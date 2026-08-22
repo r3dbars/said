@@ -171,7 +171,7 @@ Every feature has to improve one loop: **play audio, read captions**.
 
 ## Contributing
 
-Issues and focused pull requests are welcome. Please keep the product narrow, avoid content-bearing logs and persistence, and include evidence for any change to capture, inference, or caption stability.
+Issues and focused pull requests are welcome. Read the full [contributor guide](CONTRIBUTING.md) before changing capture, inference, privacy, or product scope.
 
 Before opening a pull request:
 

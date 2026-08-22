@@ -6,5 +6,8 @@
   "artifact_url": "https://github.com/handy-computer/transcribe.cpp/releases/download/v0.2.1/TranscribeCpp.xcframework.zip",
   "artifact_size_bytes": 7660708,
   "sha256": "d24e6c0aaff1e628a626f792f74bb7155287a49a5c5bb1179deb73b35f0410f5",
+  "macos_binary": "macos-arm64_x86_64/CTranscribe.framework/Versions/A/CTranscribe",
+  "macos_binary_size_bytes": 7968496,
+  "macos_binary_sha256": "2841095b22d73ca5885c09d367f0db4964a9950f58e1eebfe0670da0828236e9",
   "swift_wrapper_version": "0.2.1"
 }
