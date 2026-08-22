@@ -22,7 +22,6 @@ public extension CaptureState {
 public enum CaptureFailure: String, Error, Equatable, Sendable {
     case permissionDenied
     case noDisplay
-    case startTimedOut
     case stalled
     case stoppedUnexpectedly
     case unavailable
