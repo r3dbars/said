@@ -30,11 +30,14 @@ writes a content-free JSON receipt under `Artifacts/Receipts/Privacy/` and
 marks runtime network observation as unperformed so a static pass cannot be
 mistaken for the remaining live offline-network gate.
 
-The soak command defaults to 30 minutes. It continuously exercises local
-captioning, samples resident memory after warmup, detects pipeline failure
+The soak command defaults to 30 minutes. Every 30 seconds it plays a controlled
+phrase and requires a fresh caption revision, so a pipeline that works once and
+then silently stops cannot pass. It samples resident memory after warmup,
+enforces peak rather than merely final RSS growth, detects pipeline failure
 signatures, and writes a content-free JSON receipt under
 `Artifacts/Receipts/Soak/`. Run the same harness for 60 and 240 minutes for the
-long-session release gates.
+long-session release gates. Use `--speech-interval` only for short harness
+validation; release receipts use the 30-second default.
 
 ## Local alpha receipt
 
