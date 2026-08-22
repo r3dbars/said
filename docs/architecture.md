@@ -31,6 +31,8 @@ The PR 0 executable is an intentionally temporary product named
 
 - Starting the Core Audio tap is not sufficient proof of capture. Said remains
   in its starting state until the first owned, nonempty PCM buffer arrives.
+- The single automatic tap reconstruction follows the same rule and remains in
+  recovering state until its first owned, nonempty buffer arrives.
 - Startup fails visibly after a bounded five-second first-buffer timeout.
 - A superseded startup cannot overwrite a later stop with a failure state.
 - If captions were active when macOS announces sleep, Said tears down capture
