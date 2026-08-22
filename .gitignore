@@ -2,6 +2,7 @@
 .build/
 .swiftpm/
 DerivedData/
+Artifacts/
 Dependencies/artifacts/
 Models/
 dist/
@@ -10,4 +11,3 @@ dist/
 *.gguf
 *.partial
 *.profdata
-

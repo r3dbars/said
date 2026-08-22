@@ -1,7 +1,10 @@
 {
   "repository": "handy-computer/transcribe.cpp",
-  "commit": "PIN_AFTER_SOURCE_INSPECTION",
+  "tag": "v0.2.1",
+  "commit": "ea077b87590bcfb090d7c38c03ab36cd1c7005d3",
   "artifact": "TranscribeCpp.xcframework.zip",
-  "sha256": "FILL_AFTER_REPRODUCIBLE_BUILD",
-  "swift_wrapper_version": "VERIFY_AFTER_SOURCE_INSPECTION"
+  "artifact_url": "https://github.com/handy-computer/transcribe.cpp/releases/download/v0.2.1/TranscribeCpp.xcframework.zip",
+  "artifact_size_bytes": 7660708,
+  "sha256": "d24e6c0aaff1e628a626f792f74bb7155287a49a5c5bb1179deb73b35f0410f5",
+  "swift_wrapper_version": "0.2.1"
 }
