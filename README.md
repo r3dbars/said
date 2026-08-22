@@ -118,6 +118,9 @@ The repository keeps model-dependent hardware checks explicit while ordinary CI 
 # Real Mac playback → local model → caption pipeline
 ./scripts/capture-smoke.sh
 
+# Installed model + live captions with per-process network observation
+./scripts/offline-smoke.sh
+
 # Long-session stability and bounded memory
 ./scripts/soak-smoke.sh --minutes 30
 
