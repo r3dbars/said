@@ -4,11 +4,21 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var model: AppModel
     let showPrivacy: Bool
+    var showDiagnostics = false
     @State private var confirmRemoval = false
 
     var body: some View {
         Form {
-            if showPrivacy {
+            if showDiagnostics {
+                Section("Local diagnostics") {
+                    Text(model.diagnosticsSnapshot.text)
+                        .font(.system(.body, design: .monospaced))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text("This report stays on your Mac unless you choose to share it.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else if showPrivacy {
                 Section("What Said hears") {
                     Text("Audio playing through your Mac while Said is open.")
                 }
@@ -64,6 +74,7 @@ struct SettingsView: View {
                     LabeledContent("Version", value: appVersion)
                     HStack {
                         Button("Open Source Licenses") { model.openLicenses() }
+                        Button("Diagnostics…") { model.openDiagnostics() }
                         Button("Check for Updates") { model.checkForUpdates() }
                     }
                 }

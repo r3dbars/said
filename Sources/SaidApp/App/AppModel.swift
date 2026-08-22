@@ -1,6 +1,7 @@
 import Combine
 import Foundation
 import SaidCore
+import SaidModel
 import ServiceManagement
 
 @MainActor
@@ -24,6 +25,8 @@ final class AppModel: ObservableObject {
     var onOpenLicenses: (() -> Void)?
     var onOpenPrivacyDocument: (() -> Void)?
     var onCheckForUpdates: (() -> Void)?
+    var onOpenDiagnostics: (() -> Void)?
+    var onOpenSystemAudioSettings: (() -> Void)?
 
     private let defaults: UserDefaults
 
@@ -45,6 +48,22 @@ final class AppModel: ObservableObject {
     func openLicenses() { onOpenLicenses?() }
     func openPrivacyDocument() { onOpenPrivacyDocument?() }
     func checkForUpdates() { onCheckForUpdates?() }
+    func openDiagnostics() { onOpenDiagnostics?() }
+    func openSystemAudioSettings() { onOpenSystemAudioSettings?() }
+
+    var diagnosticsSnapshot: SaidDiagnosticsSnapshot {
+        let info = Bundle.main.infoDictionary ?? [:]
+        return SaidDiagnosticsSnapshot(
+            appVersion: info["CFBundleShortVersionString"] as? String ?? "Development",
+            buildVersion: info["CFBundleVersion"] as? String ?? "Development",
+            operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersionString,
+            architecture: "arm64",
+            modelState: modelState,
+            captureState: captureState,
+            modelRevision: ModelManifest.saidEnglishQ8.revision,
+            modelHashPrefix: String(ModelManifest.saidEnglishQ8.sha256.prefix(12))
+        )
+    }
 
     func setLaunchAtLogin(_ enabled: Bool) {
         do {
