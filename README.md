@@ -158,6 +158,7 @@ Every feature has to improve one loop: **play audio, read captions**.
 | [`scripts/`](scripts/) | Bootstrap, build, smoke, soak, privacy, and release tooling |
 | [`docs/PRD.md`](docs/PRD.md) | Locked product contract and acceptance bar |
 | [`docs/model-spike.md`](docs/model-spike.md) | Streaming benchmark and runtime evidence |
+| [`docs/reliability-matrix.md`](docs/reliability-matrix.md) | Proven, partial, and open V1 verification gates |
 | [`docs/release-checklist.md`](docs/release-checklist.md) | Local-alpha and public-release gates |
 
 ## Contributing
