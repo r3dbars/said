@@ -4,6 +4,8 @@ import SwiftUI
 struct CaptionView: View {
     @ObservedObject var model: AppModel
     let onDone: () -> Void
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
         VStack(spacing: 10) {
@@ -28,13 +30,23 @@ struct CaptionView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 17)
-        .frame(width: 760, height: 126)
-        .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .frame(width: 760, height: model.captionTextSize.panelHeight)
+        .background { captionSurface }
         .overlay {
             RoundedRectangle(cornerRadius: 22, style: .continuous)
-                .stroke(.white.opacity(0.12), lineWidth: 1)
+                .stroke(.white.opacity(contrast == .increased ? 0.42 : 0.12), lineWidth: 1)
         }
         .shadow(color: .black.opacity(0.28), radius: 18, y: 8)
         .preferredColorScheme(.dark)
+    }
+
+    @ViewBuilder
+    private var captionSurface: some View {
+        let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
+        if reduceTransparency || contrast == .increased {
+            shape.fill(Color.black)
+        } else {
+            shape.fill(.ultraThickMaterial)
+        }
     }
 }

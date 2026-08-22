@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SaidCore
 import SwiftUI
 
@@ -9,13 +10,14 @@ final class CaptionPanelController {
     private let model: AppModel
     private let panel: NSPanel
     private let defaults = UserDefaults.standard
-    private let panelSize = NSSize(width: 760, height: 126)
     private var visibilityTask: Task<Void, Never>?
+    private var textSizeCancellable: AnyCancellable?
 
     init(model: AppModel) {
         self.model = model
+        let initialSize = Self.panelSize(for: model.captionTextSize)
         panel = NSPanel(
-            contentRect: NSRect(origin: .zero, size: panelSize),
+            contentRect: NSRect(origin: .zero, size: initialSize),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -23,6 +25,7 @@ final class CaptionPanelController {
         configurePanel()
         installContent()
         restorePosition()
+        observeTextSize()
     }
 
     func showPreview() {
@@ -33,6 +36,10 @@ final class CaptionPanelController {
         panel.isMovableByWindowBackground = false
         panel.alphaValue = 0
         panel.orderFrontRegardless()
+        if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+            panel.alphaValue = 1
+            return
+        }
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.12
             panel.animator().alphaValue = 1
@@ -55,6 +62,10 @@ final class CaptionPanelController {
         visibilityTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(1.8))
             guard !Task.isCancelled, let self else { return }
+            if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+                self.panel.orderOut(nil)
+                return
+            }
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.18
                 self.panel.animator().alphaValue = 0
@@ -131,6 +142,7 @@ final class CaptionPanelController {
     private func placeAtDefaultPosition() {
         guard let screen = activeScreen() else { return }
         let frame = screen.visibleFrame
+        let panelSize = Self.panelSize(for: model.captionTextSize)
         let origin = NSPoint(
             x: frame.midX - panelSize.width / 2,
             y: frame.minY + 64
@@ -151,9 +163,26 @@ final class CaptionPanelController {
             y: defaults.double(forKey: Keys.positionY)
         )
         let visible = screen.visibleFrame
+        let panelSize = Self.panelSize(for: model.captionTextSize)
         let x = visible.minX + normalized.x * max(0, visible.width - panelSize.width)
         let y = visible.minY + normalized.y * max(0, visible.height - panelSize.height)
         panel.setFrameOrigin(NSPoint(x: x, y: y))
+    }
+
+    private func observeTextSize() {
+        textSizeCancellable = model.$captionTextSize
+            .dropFirst()
+            .sink { [weak self] size in self?.resizePanel(for: size) }
+    }
+
+    private func resizePanel(for size: CaptionTextSize) {
+        var frame = panel.frame
+        frame.size = Self.panelSize(for: size)
+        panel.setFrame(frame, display: true)
+    }
+
+    private static func panelSize(for textSize: CaptionTextSize) -> NSSize {
+        NSSize(width: 760, height: textSize.panelHeight)
     }
 
     private func savePosition() {
