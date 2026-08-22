@@ -52,7 +52,7 @@ final class MenuBarController: NSObject {
         statusMenuItem = status
         menu.addItem(status)
         menu.addItem(.separator())
-        menu.addItem(item("Move Captions…", action: #selector(moveCaptions)))
+        menu.addItem(item("Move & Resize Captions…", action: #selector(moveCaptions)))
         menu.addItem(.separator())
         menu.addItem(item("Settings…", action: #selector(openSettings), key: ","))
         menu.addItem(item("Privacy…", action: #selector(openPrivacy)))

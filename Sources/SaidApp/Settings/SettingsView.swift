@@ -42,7 +42,7 @@ struct SettingsView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    Button("Reset Caption Position") { model.resetCaptionPosition() }
+                    Button("Reset Caption Layout") { model.resetCaptionLayout() }
                 }
                 Section("General") {
                     Toggle(

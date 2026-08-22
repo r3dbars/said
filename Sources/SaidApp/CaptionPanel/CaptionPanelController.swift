@@ -12,10 +12,14 @@ final class CaptionPanelController {
     private let defaults = UserDefaults.standard
     private var visibilityTask: Task<Void, Never>?
     private var textSizeCancellable: AnyCancellable?
+    private var resizeStartWidth: CGFloat?
 
     init(model: AppModel) {
         self.model = model
-        let initialSize = Self.panelSize(for: model.captionTextSize)
+        let storedWidth = defaults.object(forKey: Keys.width) == nil
+            ? CaptionPanelLayout.defaultWidth
+            : defaults.double(forKey: Keys.width)
+        let initialSize = Self.panelSize(for: model.captionTextSize, width: storedWidth)
         panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: initialSize),
             styleMask: [.borderless, .nonactivatingPanel],
@@ -24,7 +28,7 @@ final class CaptionPanelController {
         )
         configurePanel()
         installContent()
-        restorePosition()
+        restoreLayout()
         observeTextSize()
     }
 
@@ -53,6 +57,7 @@ final class CaptionPanelController {
     }
 
     func show(_ snapshot: ASRTextSnapshot) {
+        guard !model.isPlacementMode else { return }
         model.captionWindow = CaptionWindowing.rolling(
             committed: snapshot.committed,
             tentative: snapshot.tentative,
@@ -80,41 +85,83 @@ final class CaptionPanelController {
     }
 
     private var wordsPerLine: Int {
-        switch model.captionTextSize {
-        case .small: 9
-        case .standard: 7
-        case .large: 5
-        }
+        CaptionPanelLayout.wordsPerLine(
+            width: panel.frame.width,
+            textSize: model.captionTextSize
+        )
     }
 
     func beginPlacement() {
+        visibilityTask?.cancel()
         model.captionWindow = CaptionWindow(lines: [
-            CaptionLine(id: 0, committed: "Drag captions where you want them.", tentative: ""),
+            CaptionLine(id: 0, committed: "Move and resize captions.", tentative: ""),
         ])
         model.isPlacementMode = true
+        setPanelHeight(model.captionTextSize.panelHeight + CaptionPanelLayout.editingToolbarExtraHeight)
         panel.ignoresMouseEvents = false
         panel.isMovableByWindowBackground = true
+        if let screen = panel.screen ?? activeScreen() {
+            constrainPanel(to: screen.visibleFrame)
+        }
         panel.orderFrontRegardless()
     }
 
     func endPlacement() {
-        savePosition()
+        finishResize()
         model.isPlacementMode = false
+        setPanelHeight(model.captionTextSize.panelHeight)
+        saveLayout()
         panel.ignoresMouseEvents = true
         panel.isMovableByWindowBackground = false
         panel.orderOut(nil)
     }
 
-    func resetPosition() {
+    func resetLayout() {
         defaults.removeObject(forKey: Keys.positionX)
         defaults.removeObject(forKey: Keys.positionY)
+        defaults.removeObject(forKey: Keys.width)
+        defaults.removeObject(forKey: Keys.screenIdentifier)
+        guard let screen = activeScreen() else { return }
+        let width = CaptionPanelLayout.clampedWidth(
+            CaptionPanelLayout.defaultWidth,
+            visibleScreenWidth: screen.visibleFrame.width
+        )
+        panel.setContentSize(Self.panelSize(for: model.captionTextSize, width: width))
         placeAtDefaultPosition()
+    }
+
+    func resizePanel(horizontalTranslation: CGFloat) {
+        guard model.isPlacementMode, let screen = panel.screen ?? activeScreen() else { return }
+        if resizeStartWidth == nil { resizeStartWidth = panel.frame.width }
+        guard let resizeStartWidth else { return }
+
+        let width = CaptionPanelLayout.clampedWidth(
+            resizeStartWidth + horizontalTranslation,
+            visibleScreenWidth: screen.visibleFrame.width
+        )
+        var frame = panel.frame
+        frame.size.width = width
+        if frame.maxX > screen.visibleFrame.maxX {
+            frame.origin.x = screen.visibleFrame.maxX - width
+        }
+        frame.origin.x = max(screen.visibleFrame.minX, frame.origin.x)
+        panel.setFrame(frame, display: true)
+    }
+
+    func finishResize() {
+        guard resizeStartWidth != nil else { return }
+        resizeStartWidth = nil
+        saveLayout()
     }
 
     func clearAndHide() {
         visibilityTask?.cancel()
+        resizeStartWidth = nil
         model.captionWindow = .empty
         model.isPlacementMode = false
+        setPanelHeight(model.captionTextSize.panelHeight)
+        panel.ignoresMouseEvents = true
+        panel.isMovableByWindowBackground = false
         panel.orderOut(nil)
     }
 
@@ -133,9 +180,14 @@ final class CaptionPanelController {
     }
 
     private func installContent() {
-        let view = CaptionView(model: model) { [weak self] in
-            self?.onPlacementFinished?()
-        }
+        let view = CaptionView(
+            model: model,
+            onDone: { [weak self] in self?.onPlacementFinished?() },
+            onResize: { [weak self] translation in
+                self?.resizePanel(horizontalTranslation: translation)
+            },
+            onResizeEnded: { [weak self] in self?.finishResize() }
+        )
         panel.contentView = NSHostingView(rootView: view)
     }
 
@@ -146,7 +198,7 @@ final class CaptionPanelController {
     private func placeAtDefaultPosition() {
         guard let screen = activeScreen() else { return }
         let frame = screen.visibleFrame
-        let panelSize = Self.panelSize(for: model.captionTextSize)
+        let panelSize = panel.frame.size
         let origin = NSPoint(
             x: frame.midX - panelSize.width / 2,
             y: frame.minY + 64
@@ -154,10 +206,19 @@ final class CaptionPanelController {
         panel.setFrameOrigin(origin)
     }
 
-    private func restorePosition() {
+    private func restoreLayout() {
+        guard let screen = savedScreen() ?? activeScreen() else { return }
+        let requestedWidth = defaults.object(forKey: Keys.width) == nil
+            ? CaptionPanelLayout.defaultWidth
+            : defaults.double(forKey: Keys.width)
+        let width = CaptionPanelLayout.clampedWidth(
+            requestedWidth,
+            visibleScreenWidth: screen.visibleFrame.width
+        )
+        panel.setContentSize(Self.panelSize(for: model.captionTextSize, width: width))
+
         guard defaults.object(forKey: Keys.positionX) != nil,
-              defaults.object(forKey: Keys.positionY) != nil,
-              let screen = activeScreen()
+              defaults.object(forKey: Keys.positionY) != nil
         else {
             placeAtDefaultPosition()
             return
@@ -167,7 +228,7 @@ final class CaptionPanelController {
             y: defaults.double(forKey: Keys.positionY)
         )
         let visible = screen.visibleFrame
-        let panelSize = Self.panelSize(for: model.captionTextSize)
+        let panelSize = panel.frame.size
         let x = visible.minX + normalized.x * max(0, visible.width - panelSize.width)
         let y = visible.minY + normalized.y * max(0, visible.height - panelSize.height)
         panel.setFrameOrigin(NSPoint(x: x, y: y))
@@ -180,17 +241,25 @@ final class CaptionPanelController {
     }
 
     private func resizePanel(for size: CaptionTextSize) {
+        let editingHeight = model.isPlacementMode
+            ? CaptionPanelLayout.editingToolbarExtraHeight
+            : 0
+        setPanelHeight(size.panelHeight + editingHeight)
+    }
+
+    private func setPanelHeight(_ height: Double) {
         var frame = panel.frame
-        frame.size = Self.panelSize(for: size)
+        frame.size.height = height
         panel.setFrame(frame, display: true)
     }
 
-    private static func panelSize(for textSize: CaptionTextSize) -> NSSize {
-        NSSize(width: 760, height: textSize.panelHeight)
+    private static func panelSize(for textSize: CaptionTextSize, width: Double) -> NSSize {
+        NSSize(width: width, height: textSize.panelHeight)
     }
 
-    private func savePosition() {
+    private func saveLayout() {
         guard let screen = panel.screen ?? activeScreen() else { return }
+        constrainPanel(to: screen.visibleFrame)
         let visible = screen.visibleFrame
         let availableWidth = max(1, visible.width - panel.frame.width)
         let availableHeight = max(1, visible.height - panel.frame.height)
@@ -200,10 +269,33 @@ final class CaptionPanelController {
         )
         defaults.set(normalized.x, forKey: Keys.positionX)
         defaults.set(normalized.y, forKey: Keys.positionY)
+        defaults.set(panel.frame.width, forKey: Keys.width)
+        if let identifier = screenIdentifier(for: screen) {
+            defaults.set(identifier, forKey: Keys.screenIdentifier)
+        }
+    }
+
+    private func constrainPanel(to visibleFrame: NSRect) {
+        var frame = panel.frame
+        frame.origin.x = min(max(frame.origin.x, visibleFrame.minX), visibleFrame.maxX - frame.width)
+        frame.origin.y = min(max(frame.origin.y, visibleFrame.minY), visibleFrame.maxY - frame.height)
+        panel.setFrame(frame, display: true)
+    }
+
+    private func savedScreen() -> NSScreen? {
+        guard let identifier = defaults.string(forKey: Keys.screenIdentifier) else { return nil }
+        return NSScreen.screens.first { screenIdentifier(for: $0) == identifier }
+    }
+
+    private func screenIdentifier(for screen: NSScreen) -> String? {
+        let key = NSDeviceDescriptionKey("NSScreenNumber")
+        return (screen.deviceDescription[key] as? NSNumber)?.stringValue
     }
 
     private enum Keys {
         static let positionX = "captionPositionX"
         static let positionY = "captionPositionY"
+        static let width = "captionWidth"
+        static let screenIdentifier = "captionScreenIdentifier"
     }
 }

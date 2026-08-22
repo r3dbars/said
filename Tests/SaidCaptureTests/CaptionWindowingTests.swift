@@ -2,11 +2,62 @@ import XCTest
 @testable import SaidCore
 
 final class CaptionWindowingTests: XCTestCase {
+    func testCaptionPanelWidthClampsToProductAndDisplayBounds() {
+        XCTAssertEqual(
+            CaptionPanelLayout.clampedWidth(300, visibleScreenWidth: 1_440),
+            440
+        )
+        XCTAssertEqual(
+            CaptionPanelLayout.clampedWidth(1_200, visibleScreenWidth: 1_440),
+            980
+        )
+        XCTAssertEqual(
+            CaptionPanelLayout.clampedWidth(900, visibleScreenWidth: 1_000),
+            720
+        )
+    }
+
+    func testCaptionRowCapacityTracksWidthAndTextSize() {
+        XCTAssertEqual(
+            CaptionPanelLayout.wordsPerLine(width: 760, textSize: .standard),
+            7
+        )
+        XCTAssertEqual(
+            CaptionPanelLayout.wordsPerLine(width: 440, textSize: .standard),
+            4
+        )
+        XCTAssertEqual(
+            CaptionPanelLayout.wordsPerLine(width: 980, textSize: .small),
+            11
+        )
+        XCTAssertEqual(
+            CaptionPanelLayout.wordsPerLine(width: 440, textSize: .large),
+            2
+        )
+    }
+
     func testCaptionPanelHeightsAccommodateEachTextSize() {
         XCTAssertEqual(CaptionTextSize.small.panelHeight, 110)
         XCTAssertEqual(CaptionTextSize.standard.panelHeight, 126)
         XCTAssertEqual(CaptionTextSize.large.panelHeight, 160)
         XCTAssertGreaterThan(CaptionTextSize.large.panelHeight, CaptionTextSize.standard.panelHeight)
+    }
+
+    func testCaptionTextSizeStepsAreBounded() {
+        XCTAssertEqual(CaptionTextSize.small.smaller, .small)
+        XCTAssertEqual(CaptionTextSize.small.larger, .standard)
+        XCTAssertEqual(CaptionTextSize.standard.smaller, .small)
+        XCTAssertEqual(CaptionTextSize.standard.larger, .large)
+        XCTAssertEqual(CaptionTextSize.large.smaller, .standard)
+        XCTAssertEqual(CaptionTextSize.large.larger, .large)
+    }
+
+    func testCaptionAppearanceChoicesStaySmallAndExplicit() {
+        XCTAssertEqual(CaptionFontStyle.allCases, [.rounded, .sans, .serif])
+        XCTAssertEqual(CaptionTextColor.allCases, [.white, .yellow, .cyan])
+        XCTAssertEqual(CaptionFontStyle.rounded.next, .sans)
+        XCTAssertEqual(CaptionFontStyle.sans.next, .serif)
+        XCTAssertEqual(CaptionFontStyle.serif.next, .rounded)
     }
 
     func testActiveLineGrowsWithoutReflowingCompletedLine() {

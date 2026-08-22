@@ -44,7 +44,7 @@ final class AppController {
         menuBar.onOpenSettings = { [weak settingsWindow] in settingsWindow?.show() }
         menuBar.onOpenPrivacy = { [weak settingsWindow] in settingsWindow?.showPrivacy() }
         captionPanel.onPlacementFinished = { [weak captionPanel] in captionPanel?.endPlacement() }
-        model.onResetPosition = { [weak captionPanel] in captionPanel?.resetPosition() }
+        model.onResetCaptionLayout = { [weak captionPanel] in captionPanel?.resetLayout() }
         model.onReinstallModel = { [weak capture, weak lifecycle] in
             Task {
                 await capture?.stopAndWait()
@@ -83,6 +83,9 @@ final class AppController {
     func start() {
         menuBar.install()
         modelLifecycle.prepareForLaunch()
+        if ProcessInfo.processInfo.arguments.contains("--preview-caption-controls") {
+            captionPanel.beginPlacement()
+        }
     }
 
     func stop() {
