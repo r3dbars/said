@@ -6,8 +6,7 @@ import ServiceManagement
 
 @MainActor
 final class AppModel: ObservableObject {
-    @Published var committedText = ""
-    @Published var tentativeText = ""
+    @Published var captionWindow = CaptionWindow.empty
     @Published var isPlacementMode = false
     @Published var captureState: CaptureState = .idle
     @Published var modelState: ModelState = .checking
@@ -64,6 +63,8 @@ final class AppModel: ObservableObject {
             modelHashPrefix: String(ModelManifest.saidEnglishQ8.sha256.prefix(12))
         )
     }
+
+    var visibleCaptionText: String { captionWindow.text }
 
     func setLaunchAtLogin(_ enabled: Bool) {
         do {

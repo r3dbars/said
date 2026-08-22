@@ -1,11 +1,26 @@
-public struct CaptionWindow: Equatable, Sendable {
+public struct CaptionLine: Equatable, Sendable, Identifiable {
+    public let id: Int
     public let committed: String
     public let tentative: String
 
-    public init(committed: String, tentative: String) {
+    public init(id: Int, committed: String, tentative: String) {
+        self.id = id
         self.committed = committed
         self.tentative = tentative
     }
+
+    public var text: String { committed + tentative }
+}
+
+public struct CaptionWindow: Equatable, Sendable {
+    public let lines: [CaptionLine]
+
+    public init(lines: [CaptionLine]) {
+        self.lines = lines
+    }
+
+    public static let empty = CaptionWindow(lines: [])
+    public var text: String { lines.map(\.text).joined(separator: "\n") }
 }
 
 public enum CaptionWindowing {
@@ -14,12 +29,14 @@ public enum CaptionWindowing {
         let isCommitted: Bool
     }
 
-    /// Keeps a bounded suffix across both stable and tentative text so the
-    /// newest words can never be pushed beyond the panel's two-line viewport.
-    public static func latest(
+    /// Packs words forward into stable rows and returns only the newest two.
+    /// A row never rewraps merely because a new word arrived: the active row
+    /// grows at the bottom, then advances upward as one unit when the next row
+    /// begins. Only the model's tentative suffix may still rewrite.
+    public static func rolling(
         committed: String,
         tentative: String,
-        wordLimit: Int
+        wordsPerLine: Int
     ) -> CaptionWindow {
         let committedTokens = committed
             .split(whereSeparator: \Character.isWhitespace)
@@ -28,22 +45,35 @@ public enum CaptionWindowing {
             .split(whereSeparator: \Character.isWhitespace)
             .map { Token(text: $0, isCommitted: false) }
         let allTokens = committedTokens + tentativeTokens
-        guard !allTokens.isEmpty else { return CaptionWindow(committed: "", tentative: "") }
+        guard !allTokens.isEmpty else { return .empty }
 
-        let limit = max(1, wordLimit)
-        let wasTrimmed = allTokens.count > limit
-        let visible = Array(allTokens.suffix(limit))
-        var stable = visible.filter(\.isCommitted).map(\.text).joined(separator: " ")
-        var volatile = visible.filter { !$0.isCommitted }.map(\.text).joined(separator: " ")
+        let lineCapacity = max(1, wordsPerLine)
+        let lineCount = (allTokens.count + lineCapacity - 1) / lineCapacity
+        let firstVisibleLine = max(0, lineCount - 2)
+        let wasTrimmed = firstVisibleLine > 0
 
-        if wasTrimmed {
-            if !stable.isEmpty {
-                stable = "… " + stable
-            } else if !volatile.isEmpty {
-                volatile = "… " + volatile
+        let lines = (firstVisibleLine..<lineCount).map { lineIndex in
+            let start = lineIndex * lineCapacity
+            let end = min(start + lineCapacity, allTokens.count)
+            let tokens = allTokens[start..<end]
+            var stable = tokens.filter(\.isCommitted).map(\.text).joined(separator: " ")
+            var volatile = tokens.filter { !$0.isCommitted }.map(\.text).joined(separator: " ")
+
+            if wasTrimmed, lineIndex == firstVisibleLine {
+                if !stable.isEmpty {
+                    stable = "… " + stable
+                } else {
+                    volatile = "… " + volatile
+                }
             }
+            if !stable.isEmpty, !volatile.isEmpty { stable += " " }
+
+            return CaptionLine(
+                id: lineIndex,
+                committed: stable,
+                tentative: volatile
+            )
         }
-        if !stable.isEmpty, !volatile.isEmpty { stable += " " }
-        return CaptionWindow(committed: stable, tentative: volatile)
+        return CaptionWindow(lines: lines)
     }
 }

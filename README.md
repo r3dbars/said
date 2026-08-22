@@ -31,7 +31,7 @@
 4. Read the floating two-line caption strip.
 5. Quit Said. The captions are gone.
 
-Said lives in the menu bar, stays above full-screen apps, never steals keyboard focus, and hides itself when there is nothing useful to read. Earlier words remain stable while the newest tentative words settle softly into place.
+Said lives in the menu bar, stays above full-screen apps, never steals keyboard focus, and hides itself when there is nothing useful to read. Captions grow along the lower row, then advance upward one complete row at a time, so your eyes always have a stable place to return to while tentative words settle softly.
 
 ## Why Said
 
@@ -136,7 +136,7 @@ Current evidence on the development Mac:
 
 - Real system audio reaches the local Parakeet caption pipeline.
 - Metal model loading and true streaming are proven.
-- 26 deterministic tests and the static privacy gate pass.
+- 29 deterministic tests and the static privacy gate pass.
 - Caption state, PCM queues, capture recovery, model verification, and resumable downloads have regression coverage.
 - GitHub Actions builds and verifies an arm64 local app bundle without bundling the speech model.
 

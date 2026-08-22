@@ -9,13 +9,7 @@ struct CaptionView: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            Text("\(Text(model.committedText).foregroundStyle(.primary))\(Text(model.tentativeText).foregroundStyle(.secondary))")
-                .font(.system(size: model.captionTextSize.pointSize, weight: .semibold, design: .rounded))
-                .lineLimit(2)
-                .truncationMode(.head)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                .accessibilityLabel(model.committedText + model.tentativeText)
+            captionRows
 
             if model.isPlacementMode {
                 HStack(spacing: 10) {
@@ -38,6 +32,24 @@ struct CaptionView: View {
         }
         .shadow(color: .black.opacity(0.28), radius: 18, y: 8)
         .preferredColorScheme(.dark)
+    }
+
+    private var captionRows: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if model.captionWindow.lines.count < 2 {
+                Spacer(minLength: 0)
+            }
+            ForEach(model.captionWindow.lines) { line in
+                Text("\(Text(line.committed).foregroundStyle(.primary))\(Text(line.tentative).foregroundStyle(.secondary))")
+                    .lineLimit(1)
+                    .truncationMode(.head)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .font(.system(size: model.captionTextSize.pointSize, weight: .semibold, design: .rounded))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(model.visibleCaptionText)
     }
 
     @ViewBuilder
