@@ -11,16 +11,16 @@ leaves no recording or transcript behind.
 
 ## Current milestone
 
-Work on PR 0 only until `docs/model-spike.md` proves all exit gates:
+PR 0 proved the model/runtime path on the available M5 Max and completed a
+virtual M1 correctness/memory stress run. The owner directed work toward a
+locally playable alpha on 2026-08-22. Begin PR 1 with the native app shell, then
+continue through capture and end-to-end captions.
 
-- exact `transcribe.cpp` commit and reproducible Apple artifact
-- exact Parakeet Unified EN 0.6B Q8_0 revision, size, and SHA-256
-- Metal backend
-- true buffered streaming through Swift
-- committed and tentative text from licensed fixture audio
-- benchmark matrix and an M1 16 GB receipt
+Keep these public-release gates open:
 
-Do not build the app shell before this gate passes.
+- physical M1 16 GB real-time performance receipt
+- model-license/provenance human review
+- signed and notarized clean-machine install
 
 ## Hard boundaries
 
@@ -38,4 +38,3 @@ For PR 0, run the repository scripts and record exact commands, device details,
 pins, latency, caption churn, memory, and gaps in `docs/model-spike.md`. Stop and
 report if true streaming, Metal, the license chain, or the release latency gate
 cannot be proven without violating a locked decision.
-

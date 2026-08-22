@@ -2,9 +2,6 @@ name: PR 0 M1 feasibility
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - pr0/model-feasibility
 
 permissions:
   contents: read

@@ -337,6 +337,12 @@ ceiling, committed text mutates, audio-only capture requires pixels, a forbidden
 helper/cloud path is necessary, the license chain blocks distribution, or
 long-run memory cannot be bounded.
 
+## Development decision addendum
+
+| Date | Decision | Reason |
+| --- | --- | --- |
+| 2026-08-22 | Proceed with a local alpha on the available M5 Max | The virtual M1 run proved correctness and memory safety but its three-core paravirtual environment is not representative of physical-M1 real-time performance. A physical M1/16 GB receipt remains a public-release gate. |
+
 ## Definition of done
 
 Said V1 is done only when a nondeveloper can install a signed/notarized/stapled
@@ -347,4 +353,3 @@ privacy, performance, long-run, licensing, and clean-machine gates above pass.
 The bar is not that a model returned text. The bar is a quiet Mac utility whose
 permission makes sense, captions appear quickly and remain calm, nothing is
 uploaded or accumulated, and quitting ends the experience completely.
-

@@ -1,6 +1,6 @@
 # PR 0 model feasibility spike
 
-**Status:** functionally proven on the available host; baseline-device gate pending
+**Status:** complete for local-alpha development; physical baseline release gate pending
 **Product:** Said  
 **Gate:** do not begin PR 1 until every required proof is present.
 
@@ -13,7 +13,8 @@
 | Swift | 6.3.3 |
 | Developer tools | Command Line Tools only; full Xcode currently missing |
 | Available host | MacBook Pro (Mac17,7), Apple M5 Max, 128 GB |
-| Required baseline | M1, 16 GB (not available on this host; separate receipt required) |
+| Cloud stress host | Virtual Apple M1, 3 cores, 7 GB, macOS 26.5.2 |
+| Required release baseline | Physical M1, 16 GB (not available; separate receipt required) |
 
 ## Required evidence
 
@@ -28,7 +29,8 @@
 - [x] Lookahead/feed benchmark matrix completed.
 - [x] Stable-prefix agreement 2 vs. 3 classified as N/A for this runtime (see correction below).
 - [x] Latency, normalized WER, churn, memory, Metal, and feed percentiles recorded on the available host.
-- [ ] M1 16 GB receipt completed.
+- [x] Virtual M1/7 GB correctness and memory stress receipt completed.
+- [ ] Physical M1/16 GB real-time performance receipt completed before release.
 
 ## Source-audit findings
 
@@ -130,6 +132,22 @@ lookahead costs roughly twice the total compute on this fixture for only an
 80 ms first-caption improvement; 480 ms and 1,120 ms miss the preferred latency
 direction.
 
-PR 0 is not fully closed because this machine is an M5 Max with 128 GB, not the
-required M1 with 16 GB. The dependency-license archive/human review is also not
-complete. Do not present these M5 measurements as proof of the M1 release gate.
+### Virtual M1 stress receipt
+
+GitHub Actions run
+[`32571635310`](https://github.com/r3dbars/said/actions/runs/32571635310)
+completed the same matrix on a virtual Apple M1 with three cores and 7 GB of
+memory under macOS 26.5.2. Every configuration loaded on Metal, produced the
+expected transcript, stayed below 905 MB peak RSS, and recorded zero committed
+mutations or display divergences.
+
+The virtual runner is not real-time capable at the locked 320 ms configuration:
+the 11-second fixture required about 39.9 seconds of feed processing, with a
+1,194 ms p95 feed duration. Its GPU is exposed as an Apple paravirtual device,
+so this result is a useful correctness/memory stress test but not a substitute
+for a physical M1 latency receipt.
+
+On 2026-08-22 the owner directed development toward a locally playable alpha on
+the available M5 Max. PR 0 therefore closes for alpha development with the
+physical M1/16 GB performance receipt and dependency-license human review kept
+as explicit public-release gates. Do not claim M1 support from the virtual run.
