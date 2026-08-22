@@ -11,7 +11,7 @@
 | Host architecture | Apple silicon (`arm64`) |
 | macOS | 26.6.2 |
 | Swift | 6.3.3 |
-| Developer tools | Command Line Tools only; full Xcode currently missing |
+| Developer tools | Xcode 26.6 (build 17F113), Swift 6.3.3 |
 | Available host | MacBook Pro (Mac17,7), Apple M5 Max, 128 GB |
 | Cloud stress host | Virtual Apple M1, 3 cores, 7 GB, macOS 26.5.2 |
 | Required release baseline | Physical M1, 16 GB (not available; separate receipt required) |
@@ -67,10 +67,11 @@ that the model emitted tentative text when it did not.
 
 ### Toolchain status
 
-Full Xcode is not installed. The prebuilt XCFramework may be usable with the
-Command Line Tools, so the harness build will be attempted before treating this
-as a hard blocker. Rebuilding the XCFramework and shipping a signed app require
-the full Apple toolchain.
+The current development Mac has Xcode 26.6 and Swift 6.3.3. The app, tests,
+release-optimized bundle, and ad-hoc DMG all build with that toolchain. Public
+signing and notarization remain unavailable because the login keychain contains
+no Developer ID Application identity; that is a credential gate, not a missing
+toolchain.
 
 ## Benchmark results
 
