@@ -26,4 +26,15 @@ final class SaidStatusTextTests: XCTestCase {
             "Said needs attention"
         )
     }
+
+    func testOnlyActiveCaptureStatesResumeAfterSystemWake() {
+        XCTAssertTrue(CaptureState.preparing.shouldResumeAfterSystemWake)
+        XCTAssertTrue(CaptureState.starting.shouldResumeAfterSystemWake)
+        XCTAssertTrue(CaptureState.capturing.shouldResumeAfterSystemWake)
+        XCTAssertTrue(CaptureState.recovering(attempt: 1).shouldResumeAfterSystemWake)
+
+        XCTAssertFalse(CaptureState.idle.shouldResumeAfterSystemWake)
+        XCTAssertFalse(CaptureState.stopping.shouldResumeAfterSystemWake)
+        XCTAssertFalse(CaptureState.failed(.stalled).shouldResumeAfterSystemWake)
+    }
 }

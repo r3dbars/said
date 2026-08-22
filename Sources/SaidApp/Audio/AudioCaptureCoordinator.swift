@@ -69,6 +69,8 @@ final class AudioCaptureCoordinator {
                 SaidLogger.capture.info("System-audio tap started; awaiting playback buffers")
                 beginStatePolling()
                 onStarted?()
+            } catch is CancellationError {
+                await teardownResources(finalState: .idle)
             } catch let failure as CaptureFailure {
                 SaidLogger.capture.error(
                     "System-audio capture failed with safe code \(failure.rawValue, privacy: .public)"
