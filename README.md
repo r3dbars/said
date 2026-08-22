@@ -138,7 +138,7 @@ Current evidence on the development Mac:
 
 - Real system audio reaches the local Parakeet caption pipeline.
 - Metal model loading and true streaming are proven.
-- 33 deterministic tests and the static privacy gate pass.
+- 37 deterministic tests and the static privacy gate pass.
 - Caption state, PCM queues, capture recovery, model verification, and resumable downloads have regression coverage.
 - GitHub Actions builds and verifies an arm64 local app bundle without bundling the speech model.
 
