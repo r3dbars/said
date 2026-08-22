@@ -61,11 +61,17 @@ cd said
 ./scripts/build-and-run.sh --verify
 ```
 
+After the first build, reopen that exact bundle without replacing its code-signing identity:
+
+```bash
+./scripts/build-and-run.sh --launch-only
+```
+
 On first launch, allow Said under:
 
 > System Settings → Privacy & Security → System Audio Recording Only
 
-The app installs its pinned model through the setup window, then starts captioning automatically on later launches. Local development builds are ad-hoc signed unless you explicitly provide a trusted development identity; macOS may therefore ask for permission again after rebuilding.
+The app installs its pinned model through the setup window, then starts captioning automatically when **Captions On** is enabled. Local development builds are ad-hoc signed unless you explicitly provide a trusted development identity; macOS may therefore ask for permission again after rebuilding. Ordinary playtesting and the Codex Run action reuse the existing bundle with `--launch-only`, so reopening Said does not unnecessarily change the identity associated with System Audio permission.
 
 > [!IMPORTANT]
 > Said is a playable alpha, not yet a notarized public release. Do not redistribute the local alpha as a finished release.

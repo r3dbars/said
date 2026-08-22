@@ -24,6 +24,17 @@ cd said
 ./scripts/build-and-run.sh --verify
 ```
 
+To reopen the already-built app during playtesting without replacing its
+ad-hoc signing identity, use:
+
+```bash
+./scripts/build-and-run.sh --launch-only
+```
+
+This avoids unnecessary System Audio permission prompts between ordinary
+relaunches. A rebuilt ad-hoc binary can still require permission again; use a
+trusted `SAID_LOCAL_SIGNING_IDENTITY` for stable identity across rebuilds.
+
 `bootstrap.sh` reads the checked-in runtime lock, verifies the exact submodule
 commit, archive size and SHA-256 when present, and the extracted macOS runtime
 binary. It does not download the speech model. Install the model through Said's
