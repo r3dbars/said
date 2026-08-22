@@ -20,5 +20,7 @@
     <true/>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>NSAudioCaptureUsageDescription</key>
+    <string>Said uses system audio to create live captions locally on your Mac.</string>
 </dict>
 </plist>

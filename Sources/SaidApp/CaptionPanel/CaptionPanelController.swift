@@ -10,6 +10,7 @@ final class CaptionPanelController {
     private let panel: NSPanel
     private let defaults = UserDefaults.standard
     private let panelSize = NSSize(width: 760, height: 126)
+    private var visibilityTask: Task<Void, Never>?
 
     init(model: AppModel) {
         self.model = model
@@ -38,6 +39,39 @@ final class CaptionPanelController {
         }
     }
 
+    func show(_ snapshot: ASRTextSnapshot) {
+        let window = CaptionWindowing.latest(
+            committed: snapshot.committed,
+            tentative: snapshot.tentative,
+            wordLimit: visibleWordLimit
+        )
+        model.committedText = window.committed
+        model.tentativeText = window.tentative
+        model.isPlacementMode = false
+        panel.ignoresMouseEvents = true
+        panel.orderFrontRegardless()
+        panel.alphaValue = 1
+        visibilityTask?.cancel()
+        visibilityTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1.8))
+            guard !Task.isCancelled, let self else { return }
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.18
+                self.panel.animator().alphaValue = 0
+            } completionHandler: { [weak self] in
+                Task { @MainActor in self?.panel.orderOut(nil) }
+            }
+        }
+    }
+
+    private var visibleWordLimit: Int {
+        switch model.captionTextSize {
+        case .small: 18
+        case .standard: 14
+        case .large: 10
+        }
+    }
+
     func beginPlacement() {
         model.committedText = "Drag captions where you want them."
         model.tentativeText = ""
@@ -62,6 +96,7 @@ final class CaptionPanelController {
     }
 
     func clearAndHide() {
+        visibilityTask?.cancel()
         model.committedText = ""
         model.tentativeText = ""
         model.isPlacementMode = false

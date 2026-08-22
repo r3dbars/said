@@ -3,7 +3,7 @@ import SwiftUI
 
 @MainActor
 final class SetupWindowController: NSWindowController {
-    init(onPreview: @escaping () -> Void) {
+    init(model: AppModel, onPreview: @escaping () -> Void, onStartAudio: @escaping () -> Void) {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 560, height: 430),
             styleMask: [.titled, .closable],
@@ -14,7 +14,9 @@ final class SetupWindowController: NSWindowController {
         window.isReleasedWhenClosed = false
         window.center()
         super.init(window: window)
-        window.contentView = NSHostingView(rootView: SetupView(onPreview: onPreview))
+        window.contentView = NSHostingView(
+            rootView: SetupView(model: model, onPreview: onPreview, onStartAudio: onStartAudio)
+        )
     }
 
     required init?(coder: NSCoder) { nil }

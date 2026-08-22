@@ -13,8 +13,13 @@ leaves no recording or transcript behind.
 
 PR 0 proved the model/runtime path on the available M5 Max and completed a
 virtual M1 correctness/memory stress run. The owner directed work toward a
-locally playable alpha on 2026-08-22. Begin PR 1 with the native app shell, then
-continue through capture and end-to-end captions.
+locally playable alpha on 2026-08-22. The native shell and end-to-end Core Audio
+-> Parakeet -> caption path are now implemented.
+
+The owner explicitly corrected the capture architecture after macOS placed the
+ScreenCaptureKit build under Screen & System Audio Recording. Said now uses a
+private Core Audio process tap so it appears under System Audio Recording Only.
+This decision supersedes the older ScreenCaptureKit requirement.
 
 Keep these public-release gates open:
 

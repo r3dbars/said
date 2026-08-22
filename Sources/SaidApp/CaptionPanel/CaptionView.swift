@@ -10,8 +10,9 @@ struct CaptionView: View {
             Text("\(Text(model.committedText).foregroundStyle(.primary))\(Text(model.tentativeText).foregroundStyle(.secondary))")
                 .font(.system(size: model.captionTextSize.pointSize, weight: .semibold, design: .rounded))
                 .lineLimit(2)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .truncationMode(.head)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                 .accessibilityLabel(model.committedText + model.tentativeText)
 
             if model.isPlacementMode {

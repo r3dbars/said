@@ -1,7 +1,9 @@
 import SwiftUI
 
 struct SetupView: View {
+    @ObservedObject var model: AppModel
     let onPreview: () -> Void
+    let onStartAudio: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
@@ -15,9 +17,14 @@ struct SetupView: View {
             SetupRow(
                 symbol: "speaker.wave.2.fill",
                 title: "System Audio",
-                status: "Coming next",
+                status: systemAudioStatus,
                 explanation: "Said will use an audio-only macOS capture stream. It will not capture screen pixels or your microphone."
             )
+            if model.captureState == .capturing {
+                ProgressView(value: model.audioLevel)
+                    .progressViewStyle(.linear)
+                    .accessibilityLabel("System audio level")
+            }
             SetupRow(
                 symbol: "waveform",
                 title: "Speech Model",
@@ -30,13 +37,29 @@ struct SetupView: View {
                     .font(.callout.weight(.medium))
                     .foregroundStyle(.secondary)
                 Spacer()
-                Button("Preview Captions", action: onPreview)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
+                HStack {
+                    Button("Preview Captions", action: onPreview)
+                    Button("Test System Audio", action: onStartAudio)
+                        .buttonStyle(.borderedProminent)
+                }
+                .controlSize(.large)
             }
         }
         .padding(28)
         .frame(width: 560)
+    }
+
+    private var systemAudioStatus: String {
+        switch model.captureState {
+        case .idle: "Needs permission"
+        case .preparing: "Waiting for macOS"
+        case .starting: "Starting"
+        case .capturing: "Ready"
+        case .recovering: "Restarting"
+        case .stopping: "Stopping"
+        case .failed(.permissionDenied): "Permission denied"
+        case .failed: "Needs retry"
+        }
     }
 }
 

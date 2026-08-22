@@ -8,6 +8,8 @@ final class AppModel: ObservableObject {
     @Published var committedText = ""
     @Published var tentativeText = ""
     @Published var isPlacementMode = false
+    @Published var captureState: CaptureState = .idle
+    @Published var audioLevel = 0.0
     @Published private(set) var launchAtLoginEnabled = false
     @Published private(set) var launchAtLoginError: String?
     @Published var captionTextSize: CaptionTextSize {
