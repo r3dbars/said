@@ -12,6 +12,7 @@ matrix records what they have actually proven.
 ./scripts/run-tests.sh
 ./scripts/capture-smoke.sh
 ./scripts/offline-smoke.sh
+./scripts/post-quit-privacy-smoke.sh
 ./scripts/soak-smoke.sh --minutes 30
 ```
 
@@ -42,6 +43,13 @@ captioning, plus an overlapping finite `nettop` observation across inference.
 It then writes only sample/connection counts under
 `Artifacts/Receipts/Offline/`. The passing scope is sampled per-process socket
 observation; it is not kernel packet capture.
+
+The post-quit privacy smoke speaks a controlled fixture, requires a fresh
+caption revision, quits Said, and then searches the Said unified-log interval,
+preferences, and app-owned writable locations for the fixture's distinctive
+words. It separately rejects audio- or transcript-like files. Its receipt
+contains only counts and boolean facts; raw observations are deleted. The gate
+does not claim physical memory or swap erasure.
 
 The soak command defaults to 30 minutes. Every 30 seconds it plays a controlled
 phrase and requires a fresh caption revision, so a pipeline that works once and

@@ -54,5 +54,14 @@ process identification, including local model load. After the model is ready,
 revision, and a quiet post-caption window. The tools overlap live inference.
 Raw observations are discarded; the content-free receipt is written under
 `Artifacts/Receipts/Offline/`. This is direct sampled socket observation, not a
-claim of kernel-level packet interception. The post-quit marker check remains
-a separate hardware acceptance gate before release.
+claim of kernel-level packet interception.
+
+`./scripts/post-quit-privacy-smoke.sh` exercises the separate retention gate. It
+plays a controlled, non-user fixture, requires a fresh caption revision, quits
+Said, confirms the process has terminated, and searches the Said unified-log
+interval, preferences, and app-owned writable locations for each distinctive
+fixture word. It also checks for audio- or transcript-like files. The fixture,
+caption text, and raw observations are excluded from the content-free receipt
+and removed when the test exits. This proves the inspected app-owned and logging
+boundaries; it does not claim cryptographic erasure of process memory or
+operating-system swap.

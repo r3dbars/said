@@ -88,7 +88,7 @@ retained in a receipt.
 | Model replacement/partial-install threats | **Proven — deterministic** | Model manager/downloader tests; exact manifest and atomic install | None at this layer |
 | Own process audio excluded | **Proven — source contract** | Private Core Audio tap excludes Said’s process object | Live feedback/recapture regression observation |
 | Runtime offline-network observation | **Proven — sampled M5 observation** | `offline-smoke.sh`: four-per-second `lsof` from process identification/model load plus overlapping one-second `nettop` across playback, caption revision, and quiet window; content-free receipt | Repeat for final artifact; this does not claim kernel-level packet interception |
-| Post-quit content marker | **Open** | Static scans cannot prove transient runtime content absence | Feed known marker, quit, inspect logs and app-owned storage |
+| Post-quit content marker | **Proven — sampled M5 observation** | `post-quit-privacy-smoke.sh`: controlled fixture produced a fresh caption revision; after process termination, fixture words were absent from the Said log interval, preferences, and app-owned writable files; no content-like file remained | Repeat against final artifact; this does not claim physical memory/swap erasure |
 
 ## Product and distribution
 
@@ -107,8 +107,8 @@ retained in a receipt.
 ## Ordered remaining release gates
 
 1. Run the 30-, 60-, and 240-minute live soaks with default probe cadence.
-2. Perform the post-quit secret-marker observation and repeat the sampled
-   offline-network smoke against the final signed artifact.
+2. Repeat the sampled offline-network and post-quit privacy smokes against the
+   final signed artifact.
 3. Exercise fresh permission denial/recovery, output-route changes, sleep/wake,
    multi-display/full-screen behavior, and the common-app matrix.
 4. Complete screenshot, VoiceOver, contrast, transparency, motion, and clean-user
