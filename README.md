@@ -24,7 +24,7 @@ M1/16 GB release receipt and signed/notarized distribution remain outstanding.
 To build, package, and launch the current local alpha:
 
 ```bash
-./script/build_and_run.sh --verify
+./scripts/build-and-run.sh --verify
 ```
 
 To reproduce the available-host proof:
@@ -32,7 +32,9 @@ To reproduce the available-host proof:
 ```bash
 ./scripts/bootstrap.sh
 ./scripts/download-model.sh
+./scripts/run-tests.sh
 ./scripts/streaming-smoke.sh
+./scripts/capture-smoke.sh
 ./scripts/performance-smoke.sh
 ./scripts/privacy-smoke.sh
 ```

@@ -1,5 +1,17 @@
 # Release checklist
 
+## Local development receipt
+
+```bash
+./scripts/build-and-run.sh --verify
+./scripts/run-tests.sh
+./scripts/capture-smoke.sh
+```
+
+The capture smoke plays a short synthetic phrase through macOS and checks only
+content-free operational logs for proof that audio reached the local caption
+pipeline. It never inspects or persists recognized text.
+
 ## Local alpha receipt
 
 This produces a release-optimized, ad-hoc-signed DMG for testing on this Mac.
