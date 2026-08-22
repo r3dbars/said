@@ -1,0 +1,7 @@
+{
+  "repository": "handy-computer/transcribe.cpp",
+  "commit": "PIN_AFTER_SOURCE_INSPECTION",
+  "artifact": "TranscribeCpp.xcframework.zip",
+  "sha256": "FILL_AFTER_REPRODUCIBLE_BUILD",
+  "swift_wrapper_version": "VERIFY_AFTER_SOURCE_INSPECTION"
+}

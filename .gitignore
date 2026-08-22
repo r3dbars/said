@@ -1,0 +1,13 @@
+.DS_Store
+.build/
+.swiftpm/
+DerivedData/
+Dependencies/artifacts/
+Models/
+dist/
+*.xcframework
+*.xcframework.zip
+*.gguf
+*.partial
+*.profdata
+
