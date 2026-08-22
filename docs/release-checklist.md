@@ -6,11 +6,18 @@
 ./scripts/build-and-run.sh --verify
 ./scripts/run-tests.sh
 ./scripts/capture-smoke.sh
+./scripts/soak-smoke.sh --minutes 30
 ```
 
 The capture smoke plays a short synthetic phrase through macOS and checks only
 content-free operational logs for proof that audio reached the local caption
 pipeline. It never inspects or persists recognized text.
+
+The soak command defaults to 30 minutes. It continuously exercises local
+captioning, samples resident memory after warmup, detects pipeline failure
+signatures, and writes a content-free JSON receipt under
+`Artifacts/Receipts/Soak/`. Run the same harness for 60 and 240 minutes for the
+long-session release gates.
 
 ## Local alpha receipt
 

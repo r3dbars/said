@@ -35,6 +35,7 @@ To reproduce the available-host proof:
 ./scripts/run-tests.sh
 ./scripts/streaming-smoke.sh
 ./scripts/capture-smoke.sh
+./scripts/soak-smoke.sh --minutes 30
 ./scripts/performance-smoke.sh
 ./scripts/privacy-smoke.sh
 ```
