@@ -1,0 +1,46 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-app:
+    name: Tests, privacy, and local package
+    runs-on: macos-26
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out pinned source and submodules
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Record toolchain
+        run: |
+          swift --version
+          sw_vers
+          uname -m
+
+      - name: Bootstrap verified native runtime
+        run: ./scripts/bootstrap.sh
+
+      - name: Run deterministic tests and privacy gate
+        run: ./scripts/run-tests.sh
+
+      - name: Build and verify local app bundle
+        run: |
+          ./scripts/build-app.sh --configuration release --adhoc
+          ./scripts/verify-release.sh --allow-adhoc dist/Said.app
+
+      - name: Confirm model is not bundled
+        run: test -z "$(find dist/Said.app -type f -iname '*.gguf' -print -quit)"
