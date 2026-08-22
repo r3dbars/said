@@ -4,6 +4,10 @@ set -euo pipefail
 repo_root=${0:A:h:h}
 app="$repo_root/dist/Said.app"
 subsystem=app.said.Said
+receipt_dir="$repo_root/Artifacts/Receipts/Capture"
+run_id=$(/bin/date -u '+%Y%m%dT%H%M%SZ')
+receipt="$receipt_dir/capture-$run_id.json"
+started_epoch=$(/bin/date +%s)
 log_file=$(/usr/bin/mktemp /private/tmp/said-capture-smoke.XXXXXX)
 log_pid=""
 
@@ -74,7 +78,30 @@ if [[ "$caption_seen" != true ]]; then
   exit 1
 fi
 
+/bin/mkdir -p "$receipt_dir"
+commit=$(git -C "$repo_root" rev-parse HEAD)
+macos_version=$(/usr/bin/sw_vers -productVersion)
+hardware=$(/usr/sbin/sysctl -n machdep.cpu.brand_string)
+memory_bytes=$(/usr/sbin/sysctl -n hw.memsize)
+elapsed_seconds=$(( $(/bin/date +%s) - started_epoch ))
+
+/usr/bin/printf '%s\n' \
+  '{' \
+  '  "status": "passed",' \
+  "  \"run_id\": \"$run_id\"," \
+  "  \"git_commit\": \"$commit\"," \
+  "  \"macos_version\": \"$macos_version\"," \
+  "  \"hardware\": \"$hardware\"," \
+  "  \"memory_bytes\": $memory_bytes," \
+  "  \"elapsed_seconds\": $elapsed_seconds," \
+  '  "local_model_loaded_on_metal": true,' \
+  '  "caption_revision_observed": true,' \
+  '  "content_inspected": false,' \
+  '  "content_retained": false' \
+  '}' >"$receipt"
+
 print "capture smoke passed"
 print -- "- pinned local model loaded on Metal"
 print -- "- synthesized Mac playback reached the caption pipeline"
 print -- "- validation used content-free operational logs"
+print -- "- receipt: $receipt"
