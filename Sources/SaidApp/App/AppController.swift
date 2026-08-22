@@ -13,6 +13,7 @@ final class AppController {
     private var activeModelURL: URL?
     private var shouldResumeAfterWake = false
     private var sleepStopTask: Task<Void, Never>?
+    private var captionTransitionTask: Task<Void, Never>?
 
     init(model: AppModel) {
         self.model = model
@@ -33,6 +34,7 @@ final class AppController {
 
         lifecycle.onReady = { [weak self, weak capture] url in
             self?.activeModelURL = url
+            guard self?.model.captionsEnabled == true else { return }
             capture?.start(modelURL: url)
         }
         lifecycle.onNeedsSetup = { [weak setup] in setup?.show() }
@@ -41,6 +43,9 @@ final class AppController {
         capture.onStarted = { [weak setup] in setup?.hide() }
         capture.onFailure = { [weak setup] _ in setup?.show() }
         menuBar.onMoveCaptions = { [weak captionPanel] in captionPanel?.beginPlacement() }
+        menuBar.onSetCaptionsEnabled = { [weak self] enabled in
+            self?.setCaptionsEnabled(enabled)
+        }
         menuBar.onOpenSettings = { [weak settingsWindow] in settingsWindow?.show() }
         menuBar.onOpenPrivacy = { [weak settingsWindow] in settingsWindow?.showPrivacy() }
         captionPanel.onPlacementFinished = { [weak captionPanel] in captionPanel?.endPlacement() }
@@ -97,6 +102,8 @@ final class AppController {
         shouldResumeAfterWake = false
         sleepStopTask?.cancel()
         sleepStopTask = nil
+        captionTransitionTask?.cancel()
+        captionTransitionTask = nil
         removeWorkspaceObservers()
         audioCapture.stop()
         captionPanel.clearAndHide()
@@ -142,7 +149,10 @@ final class AppController {
     }
 
     private func resumeAfterSystemWake() {
-        guard shouldResumeAfterWake, let modelURL = activeModelURL else { return }
+        guard shouldResumeAfterWake,
+              model.captionsEnabled,
+              let modelURL = activeModelURL
+        else { return }
         shouldResumeAfterWake = false
         let pendingStop = sleepStopTask
         sleepStopTask = nil
@@ -151,6 +161,34 @@ final class AppController {
             guard let self, self.model.modelState == .ready else { return }
             SaidLogger.capture.info("Restarting caption pipeline after system wake")
             audioCapture?.start(modelURL: modelURL)
+        }
+    }
+
+    private func setCaptionsEnabled(_ enabled: Bool) {
+        guard model.captionsEnabled != enabled else { return }
+        model.setCaptionsEnabled(enabled)
+        shouldResumeAfterWake = false
+        sleepStopTask?.cancel()
+        sleepStopTask = nil
+
+        if !enabled { captionPanel.clearAndHide() }
+
+        let previousTransition = captionTransitionTask
+        captionTransitionTask = Task { [weak self] in
+            await previousTransition?.value
+            guard let self, !Task.isCancelled,
+                  self.model.captionsEnabled == enabled
+            else { return }
+
+            if enabled {
+                if self.model.modelState == .ready, let activeModelURL = self.activeModelURL {
+                    self.audioCapture.start(modelURL: activeModelURL)
+                } else {
+                    self.modelLifecycle.prepareForLaunch()
+                }
+            } else {
+                await self.audioCapture.stopAndWait()
+            }
         }
     }
 

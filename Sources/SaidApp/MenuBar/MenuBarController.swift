@@ -5,6 +5,7 @@ import SaidCore
 @MainActor
 final class MenuBarController: NSObject {
     var onMoveCaptions: (() -> Void)?
+    var onSetCaptionsEnabled: ((Bool) -> Void)?
     var onOpenSettings: (() -> Void)?
     var onOpenPrivacy: (() -> Void)?
 
@@ -12,22 +13,28 @@ final class MenuBarController: NSObject {
     private weak var model: AppModel?
     private var cancellable: AnyCancellable?
     private weak var statusMenuItem: NSMenuItem?
+    private weak var captionsEnabledMenuItem: NSMenuItem?
 
     init(model: AppModel) {
         self.model = model
         super.init()
-        cancellable = Publishers.CombineLatest(model.$modelState, model.$captureState)
-            .sink { [weak self] modelState, captureState in
-                self?.statusMenuItem?.title = SaidStatusText.title(
-                    model: modelState,
-                    capture: captureState
+        cancellable = Publishers.CombineLatest3(
+            model.$modelState,
+            model.$captureState,
+            model.$captionsEnabled
+        )
+            .sink { [weak self] modelState, captureState, captionsEnabled in
+                self?.updateState(
+                    modelState: modelState,
+                    captureState: captureState,
+                    captionsEnabled: captionsEnabled
                 )
             }
     }
 
     func install() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        item.button?.image = NSImage(systemSymbolName: "captions.bubble.fill", accessibilityDescription: "Said")
+        item.button?.image = statusImage(captionsEnabled: model?.captionsEnabled ?? true)
         item.button?.toolTip = "Said"
         item.menu = makeMenu()
         statusItem = item
@@ -43,7 +50,8 @@ final class MenuBarController: NSObject {
         let status = NSMenuItem(
             title: SaidStatusText.title(
                 model: model?.modelState ?? .checking,
-                capture: model?.captureState ?? .idle
+                capture: model?.captureState ?? .idle,
+                captionsEnabled: model?.captionsEnabled ?? true
             ),
             action: nil,
             keyEquivalent: ""
@@ -52,7 +60,11 @@ final class MenuBarController: NSObject {
         statusMenuItem = status
         menu.addItem(status)
         menu.addItem(.separator())
-        menu.addItem(item("Move & Resize Captions…", action: #selector(moveCaptions)))
+        let captionsEnabled = item("Captions On", action: #selector(toggleCaptions))
+        captionsEnabled.state = model?.captionsEnabled == false ? .off : .on
+        captionsEnabledMenuItem = captionsEnabled
+        menu.addItem(captionsEnabled)
+        menu.addItem(item("Customize Captions…", action: #selector(moveCaptions)))
         menu.addItem(.separator())
         menu.addItem(item("Settings…", action: #selector(openSettings), key: ","))
         menu.addItem(item("Privacy…", action: #selector(openPrivacy)))
@@ -68,8 +80,33 @@ final class MenuBarController: NSObject {
     }
 
     @objc private func moveCaptions() { onMoveCaptions?() }
+    @objc private func toggleCaptions() {
+        onSetCaptionsEnabled?(!(model?.captionsEnabled ?? true))
+    }
     @objc private func openSettings() { onOpenSettings?() }
     @objc private func openPrivacy() { onOpenPrivacy?() }
     @objc private func quit() { NSApp.terminate(nil) }
+
+    private func updateState(
+        modelState: ModelState,
+        captureState: CaptureState,
+        captionsEnabled: Bool
+    ) {
+        statusMenuItem?.title = SaidStatusText.title(
+            model: modelState,
+            capture: captureState,
+            captionsEnabled: captionsEnabled
+        )
+        captionsEnabledMenuItem?.state = captionsEnabled ? .on : .off
+        statusItem?.button?.image = statusImage(captionsEnabled: captionsEnabled)
+        statusItem?.button?.toolTip = captionsEnabled ? "Said — captions on" : "Said — captions off"
+    }
+
+    private func statusImage(captionsEnabled: Bool) -> NSImage? {
+        NSImage(
+            systemSymbolName: captionsEnabled ? "captions.bubble.fill" : "captions.bubble",
+            accessibilityDescription: captionsEnabled ? "Said, captions on" : "Said, captions off"
+        )
+    }
 
 }

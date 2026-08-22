@@ -10,6 +10,9 @@ final class AppModel: ObservableObject {
     @Published var captionControlsMode = CaptionControlsMode.hidden
     @Published var captureState: CaptureState = .idle
     @Published var modelState: ModelState = .checking
+    @Published private(set) var captionsEnabled: Bool {
+        didSet { defaults.set(captionsEnabled, forKey: Keys.captionsEnabled) }
+    }
     @Published var audioLevel = 0.0
     @Published private(set) var launchAtLoginEnabled = false
     @Published private(set) var launchAtLoginError: String?
@@ -37,6 +40,7 @@ final class AppModel: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        captionsEnabled = defaults.object(forKey: Keys.captionsEnabled) as? Bool ?? true
         captionTextSize = CaptionTextSize(
             rawValue: defaults.string(forKey: Keys.captionTextSize) ?? ""
         ) ?? .standard
@@ -51,6 +55,10 @@ final class AppModel: ObservableObject {
 
     func resetCaptionLayout() {
         onResetCaptionLayout?()
+    }
+
+    func setCaptionsEnabled(_ enabled: Bool) {
+        captionsEnabled = enabled
     }
 
     func decreaseCaptionTextSize() { captionTextSize = captionTextSize.smaller }
@@ -97,6 +105,7 @@ final class AppModel: ObservableObject {
     }
 
     private enum Keys {
+        static let captionsEnabled = "captionsEnabled"
         static let captionTextSize = "captionTextSize"
         static let captionFontStyle = "captionFontStyle"
         static let captionTextColor = "captionTextColor"

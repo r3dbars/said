@@ -61,7 +61,7 @@ account, recording, or permanent transcript.
 | Accounts / billing | None in V1 |
 | Cloud / fallbacks | None; no Apple Speech, Whisper, or Nemotron |
 | Content retention | No audio files, transcripts, history, save, or export |
-| Controls | No Pause, Rewind, or normal-use Start/Stop |
+| Controls | One persistent menu-bar Captions On toggle; no rewind or session controls |
 | Expansion | No translation, summaries, labels, detection, or model picker |
 | Data services | No analytics or third-party crash reporting |
 | Distribution | Direct signed and notarized Mac app; no App Store V1 |
@@ -98,18 +98,23 @@ downloads resume safely. Denied permission offers System Settings and Retry.
 
 ### Later launches
 
-Launch as a menu-bar utility, validate and load the model, start capture, and
-remain hidden until speech produces text. There is no normal-use Start button.
+Launch as a menu-bar utility, validate the model, and start capture when the
+saved Captions On toggle is enabled. Remain hidden until speech produces text.
 
 ### Menu
 
 1. Disabled local status row.
-2. **Move & Resize Captions…**
-3. **Settings…**
-4. **Privacy…**
-5. **Quit Said**
+2. Checked **Captions On** toggle.
+3. **Customize Captions…**
+4. **Settings…**
+5. **Privacy…**
+6. **Quit Said**
 
-There is no Pause or Stop item. Quitting stops the product.
+Turning captions off immediately hides the panel, stops system-audio capture,
+and clears ephemeral caption state. Turning captions on restarts the existing
+local pipeline. The off state persists across launches and must be unmistakable:
+the status row reads **Captions are off**, the toggle is unchecked, and the
+menu-bar icon uses its unfilled treatment.
 
 ### Caption panel
 
@@ -158,7 +163,7 @@ Hovering visible captions makes the whole panel draggable and adds a compact
 dark control bar above—not inside—the caption surface. The bar owns text size,
 font, text color, and one horizontal Resize handle; it collapses shortly after
 the pointer leaves and captions return to click-through behavior. The menu-bar
-Move & Resize mode remains available during silence, shows a sample, and adds
+Customize Captions mode remains available during silence, shows a sample, and adds
 an explicit Done control. Width is clamped to the product/display bounds above,
 while text size controls the fixed two-line height. Settings contains caption
 size, Reset Caption Layout, native
@@ -379,6 +384,7 @@ long-run memory cannot be bounded.
 | 2026-08-22 | Roll captions in stable whole-line steps | A moving suffix caused the upper line to rewrap under the reader's eyes. The lower row now grows in place and advances upward only when a new row begins. |
 | 2026-08-22 | Hover visible captions to adjust them; retain explicit menu placement | Hover removes unnecessary menu-bar friction while delayed collapse restores normal click-through behavior. The menu action remains the dependable path during silence and shows an explicit Done affordance. |
 | 2026-08-22 | Put a compact appearance bar above captions during layout editing | The owner selected a dense dark-toolbar reference and requested one-click size and color plus a few font choices without adding persistent normal-mode chrome. |
+| 2026-08-22 | Add a persistent menu-bar Captions On toggle | People need an unmistakable indication of when captions should appear. Off stops capture, clears the panel, and persists across relaunches; the checkmark, status copy, and icon treatment all expose the state. |
 
 ## Definition of done
 
