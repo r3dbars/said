@@ -21,6 +21,9 @@ final class AppModel: ObservableObject {
     var onReinstallModel: (() -> Void)?
     var onRemoveModel: (() -> Void)?
     var onRevealModel: (() -> Void)?
+    var onOpenLicenses: (() -> Void)?
+    var onOpenPrivacyDocument: (() -> Void)?
+    var onCheckForUpdates: (() -> Void)?
 
     private let defaults: UserDefaults
 
@@ -39,6 +42,9 @@ final class AppModel: ObservableObject {
     func reinstallModel() { onReinstallModel?() }
     func removeModel() { onRemoveModel?() }
     func revealModel() { onRevealModel?() }
+    func openLicenses() { onOpenLicenses?() }
+    func openPrivacyDocument() { onOpenPrivacyDocument?() }
+    func checkForUpdates() { onCheckForUpdates?() }
 
     func setLaunchAtLogin(_ enabled: Bool) {
         do {

@@ -37,6 +37,16 @@ To reproduce the available-host proof:
 ./scripts/privacy-smoke.sh
 ```
 
+To build and verify a local-only release DMG:
+
+```bash
+./scripts/package-dmg.sh --adhoc
+./scripts/verify-release.sh --allow-adhoc dist/Said-0.1.0-alpha-local-alpha.dmg
+```
+
+See [the release checklist](docs/release-checklist.md) for the Developer ID and
+notarization path. A `local-alpha` DMG is intentionally not a public release.
+
 Read [the product requirements](docs/PRD.md) and
 [the model spike](docs/model-spike.md) for current evidence and blockers.
 
