@@ -47,6 +47,12 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         }
 
         do {
+            let mayStart = lock.withLock { () -> Bool in
+                guard generation == captureGeneration else { return false }
+                internalState = .starting
+                return true
+            }
+            guard mayStart else { throw CancellationError() }
             try setupAndStart(generation: captureGeneration)
             try await waitForFirstBuffer(generation: captureGeneration)
             let valid = lock.withLock {
@@ -143,11 +149,6 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             throw CoreAudioCaptureError.createAggregateDevice(status)
         }
         aggregateDeviceID = aggregateID
-
-        lock.withLock {
-            guard generation == captureGeneration else { return }
-            internalState = .starting
-        }
 
         status = AudioDeviceCreateIOProcIDWithBlock(
             &deviceProcID,
@@ -264,11 +265,8 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             Thread.sleep(forTimeInterval: 0.15)
             do {
                 try self.setupAndStart(generation: captureGeneration)
-                self.lock.withLock {
-                    if self.generation == captureGeneration {
-                        self.internalState = .capturing
-                        self.recoveryInFlight = false
-                    }
+                Task { [weak self] in
+                    await self?.proveRecoveredStream(generation: captureGeneration)
                 }
             } catch {
                 self.lock.withLock {
@@ -276,6 +274,30 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
                         self.internalState = .failed(self.classify(error))
                         self.recoveryInFlight = false
                     }
+                }
+            }
+        }
+    }
+
+    private func proveRecoveredStream(generation captureGeneration: UInt64) async {
+        do {
+            try await waitForFirstBuffer(generation: captureGeneration)
+            lock.withLock {
+                if generation == captureGeneration {
+                    internalState = .capturing
+                    recoveryInFlight = false
+                }
+            }
+        } catch is CancellationError {
+            return
+        } catch {
+            let isCurrentGeneration = lock.withLock { generation == captureGeneration }
+            guard isCurrentGeneration else { return }
+            teardownResources()
+            lock.withLock {
+                if generation == captureGeneration {
+                    internalState = .failed(classify(error))
+                    recoveryInFlight = false
                 }
             }
         }
