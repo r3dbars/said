@@ -1,6 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 
+repo_root=${0:A:h:h}
 allow_adhoc=false
 allow_development=false
 artifact=""
@@ -78,9 +79,63 @@ done
 
 codesign --verify --deep --strict --verbose=2 "$app"
 details=$(codesign -dvvv "$app" 2>&1)
+
+write_receipt() {
+  local signing_tier=$1
+  local hardened_runtime=$2
+  local gatekeeper_accepted=$3
+  local notarization_validated=$4
+  local receipt_dir="$repo_root/Artifacts/Receipts/Release"
+  local run_id=$(/bin/date -u '+%Y%m%dT%H%M%SZ')
+  local receipt="$receipt_dir/release-$run_id.json"
+  local artifact_kind=app
+  local digest_subject="$app/Contents/MacOS/Said"
+  if [[ "$artifact" == *.dmg ]]; then
+    artifact_kind=dmg
+    digest_subject="$artifact"
+  fi
+  local artifact_size_bytes=$(/usr/bin/stat -f '%z' "$digest_subject")
+  local artifact_sha256=$(/usr/bin/shasum -a 256 "$digest_subject" | /usr/bin/awk '{print $1}')
+  local verifier_commit=$(git -C "$repo_root" rev-parse HEAD)
+  local worktree_clean=true
+  if [[ -n $(git -C "$repo_root" status --porcelain --untracked-files=no) ]]; then
+    worktree_clean=false
+  fi
+  local macos_version=$(/usr/bin/sw_vers -productVersion)
+  local hardware=$(/usr/sbin/sysctl -n machdep.cpu.brand_string)
+  local memory_bytes=$(/usr/sbin/sysctl -n hw.memsize)
+  local app_version=$(plutil -extract CFBundleShortVersionString raw "$app/Contents/Info.plist")
+  local app_build=$(plutil -extract CFBundleVersion raw "$app/Contents/Info.plist")
+
+  /bin/mkdir -p "$receipt_dir"
+  /usr/bin/printf '%s\n' \
+    '{' \
+    '  "status": "passed",' \
+    "  \"run_id\": \"$run_id\"," \
+    "  \"verifier_git_commit\": \"$verifier_commit\"," \
+    "  \"verifier_worktree_clean\": $worktree_clean," \
+    "  \"macos_version\": \"$macos_version\"," \
+    "  \"hardware\": \"$hardware\"," \
+    "  \"memory_bytes\": $memory_bytes," \
+    "  \"app_version\": \"$app_version\"," \
+    "  \"app_build\": \"$app_build\"," \
+    "  \"artifact_kind\": \"$artifact_kind\"," \
+    "  \"artifact_size_bytes\": $artifact_size_bytes," \
+    "  \"artifact_sha256\": \"$artifact_sha256\"," \
+    "  \"signing_tier\": \"$signing_tier\"," \
+    "  \"hardened_runtime\": $hardened_runtime," \
+    "  \"gatekeeper_accepted\": $gatekeeper_accepted," \
+    "  \"notarization_validated\": $notarization_validated," \
+    '  "model_bundled": false,' \
+    '  "content_retained": false' \
+    '}' >"$receipt"
+  print "verification receipt: $receipt"
+}
+
 if [[ "$details" == *"Signature=adhoc"* ]]; then
   [[ "$allow_adhoc" == true ]] || { print -u2 "release artifact is ad-hoc signed"; exit 1; }
   print "local-alpha verification passed (ad-hoc signature; not distributable)"
+  write_receipt adhoc false false false
   exit 0
 fi
 
@@ -88,6 +143,7 @@ fi
 if [[ "$details" == *"Authority=Apple Development:"* ]]; then
   [[ "$allow_development" == true ]] || { print -u2 "release artifact has a local Apple Development signature"; exit 1; }
   print "local development verification passed (stable Apple Development signature; not distributable)"
+  write_receipt apple-development true false false
   exit 0
 fi
 
@@ -98,3 +154,8 @@ if [[ "$artifact" == *.dmg ]]; then
   xcrun stapler validate "$artifact"
 fi
 print "release verification passed"
+if [[ "$artifact" == *.dmg ]]; then
+  write_receipt developer-id true true true
+else
+  write_receipt developer-id true true false
+fi

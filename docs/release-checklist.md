@@ -46,6 +46,13 @@ It is deliberately named `local-alpha` and is not a public distribution build.
 ./scripts/verify-release.sh --allow-adhoc dist/Said-0.1.0-alpha-local-alpha.dmg
 ```
 
+Successful verification writes a content-free JSON receipt under
+`Artifacts/Receipts/Release/` containing the exact artifact SHA-256, app
+version, verifier commit/cleanliness, signing tier, and explicit booleans for
+Hardened Runtime, Gatekeeper, notarization, and model bundling. An ad-hoc
+receipt records those public-release gates as false rather than presenting a
+local artifact as distributable.
+
 ## Developer ID prerequisites
 
 - A valid `Developer ID Application` certificate in the login keychain.
