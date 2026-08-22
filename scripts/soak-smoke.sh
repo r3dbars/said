@@ -5,6 +5,7 @@ repo_root=${0:A:h:h}
 app="$repo_root/dist/Said.app"
 duration_seconds=1800
 sample_interval_seconds=5
+speech_interval_seconds=30
 maximum_rss_growth_kb=$((256 * 1024))
 
 while (( $# > 0 )); do
@@ -19,14 +20,20 @@ while (( $# > 0 )); do
       duration_seconds=$2
       shift 2
       ;;
+    --speech-interval)
+      [[ ${2:-} == <-> ]] || { print -u2 "--speech-interval requires a whole number"; exit 2; }
+      speech_interval_seconds=$2
+      shift 2
+      ;;
     *)
-      print -u2 "usage: $0 [--minutes WHOLE_NUMBER | --seconds WHOLE_NUMBER]"
+      print -u2 "usage: $0 [--minutes WHOLE_NUMBER | --seconds WHOLE_NUMBER] [--speech-interval WHOLE_NUMBER]"
       exit 2
       ;;
   esac
 done
 
 (( duration_seconds > 0 )) || { print -u2 "duration must be greater than zero"; exit 2; }
+(( speech_interval_seconds > 0 )) || { print -u2 "speech interval must be greater than zero"; exit 2; }
 [[ -d "$app" ]] || {
   print -u2 "Build Said first with ./scripts/build-and-run.sh --verify"
   exit 1
@@ -60,6 +67,22 @@ wait_for_log() {
   return 1
 }
 
+caption_revision_count() {
+  /usr/bin/grep -c 'Caption revision' "$log_file" 2>/dev/null || true
+}
+
+wait_for_new_caption() {
+  local previous_count=$1
+  local timeout_seconds=$2
+  local waited=0
+  while (( waited < timeout_seconds )); do
+    (( $(caption_revision_count) > previous_count )) && return 0
+    /bin/sleep 1
+    (( waited += 1 ))
+  done
+  return 1
+}
+
 failure_pattern='Audio block queue overflowed|failed after bounded recovery|System-audio capture failed|Caption pipeline failed|startTimedOut'
 
 /usr/bin/osascript -e 'tell application "Said" to quit' 2>/dev/null || true
@@ -84,8 +107,9 @@ wait_for_log 'Loaded pinned model on Metal' 30 || {
   exit 1
 }
 
+initial_revision_count=$(caption_revision_count)
 /usr/bin/say -r 150 'Said turns audio playing through this Mac into private live captions.'
-wait_for_log 'Caption revision' 20 || {
+wait_for_new_caption "$initial_revision_count" 20 || {
   print -u2 "No caption arrived. Allow Said under System Audio Recording Only, then rerun."
   exit 1
 }
@@ -100,6 +124,8 @@ done
 
 started_epoch=$(/bin/date +%s)
 next_progress=60
+next_speech_epoch=$started_epoch
+playback_probe_count=0
 print "Starting ${duration_seconds}-second Said soak; PID $pid"
 
 while true; do
@@ -116,7 +142,19 @@ while true; do
     exit 1
   fi
 
-  /usr/bin/say -r 175 'Said is checking stable local captions without saving the words.'
+  if (( now_epoch >= next_speech_epoch )); then
+    previous_revision_count=$(caption_revision_count)
+    /usr/bin/say -r 175 'Said is checking stable local captions without saving the words.'
+    wait_for_new_caption "$previous_revision_count" 20 || {
+      print -u2 "Playback probe $(( playback_probe_count + 1 )) produced no fresh caption revision."
+      exit 1
+    }
+    playback_probe_count=$(( playback_probe_count + 1 ))
+    next_speech_epoch=$(( $(/bin/date +%s) + speech_interval_seconds ))
+  fi
+
+  now_epoch=$(/bin/date +%s)
+  elapsed=$(( now_epoch - started_epoch ))
   rss_kb=$(/bin/ps -o rss= -p "$pid" | /usr/bin/awk '{print $1}')
   [[ -n "$rss_kb" ]] || { print -u2 "Could not sample Said memory."; exit 1; }
   print "$elapsed $rss_kb" >>"$rss_file"
@@ -134,12 +172,14 @@ maximum_rss_kb=$(/usr/bin/awk 'BEGIN {max=0} {if ($2>max) max=$2} END {print max
 sample_count=$(/usr/bin/awk 'END {print NR}' "$rss_file")
 caption_revision_count=$(/usr/bin/grep -c 'Caption revision' "$log_file" || true)
 rss_growth_kb=$(( last_rss_kb - first_rss_kb ))
+peak_rss_growth_kb=$(( maximum_rss_kb - first_rss_kb ))
 failure_count=$(/usr/bin/grep -Ec "$failure_pattern" "$log_file" || true)
 
 (( caption_revision_count > 0 )) || { print -u2 "No caption revisions were observed."; exit 1; }
+(( playback_probe_count > 0 )) || { print -u2 "No periodic playback probes completed."; exit 1; }
 (( failure_count == 0 )) || { print -u2 "A pipeline failure was observed."; exit 1; }
-(( rss_growth_kb <= maximum_rss_growth_kb )) || {
-  print -u2 "RSS grew by more than 256 MiB after warmup; investigate before release."
+(( peak_rss_growth_kb <= maximum_rss_growth_kb )) || {
+  print -u2 "Peak RSS grew by more than 256 MiB after warmup; investigate before release."
   exit 1
 }
 
@@ -158,11 +198,15 @@ memory_bytes=$(/usr/sbin/sysctl -n hw.memsize)
   "  \"hardware\": \"$hardware\"," \
   "  \"memory_bytes\": $memory_bytes," \
   "  \"duration_seconds\": $duration_seconds," \
+  "  \"speech_interval_seconds\": $speech_interval_seconds," \
+  "  \"playback_probe_count\": $playback_probe_count," \
+  '  "playback_probe_failure_count": 0,' \
   "  \"rss_sample_count\": $sample_count," \
   "  \"first_rss_kb\": $first_rss_kb," \
   "  \"last_rss_kb\": $last_rss_kb," \
   "  \"maximum_rss_kb\": $maximum_rss_kb," \
   "  \"rss_growth_kb\": $rss_growth_kb," \
+  "  \"peak_rss_growth_kb\": $peak_rss_growth_kb," \
   "  \"caption_revision_count\": $caption_revision_count," \
   "  \"pipeline_failure_count\": $failure_count," \
   '  "content_retained": false' \
@@ -170,6 +214,8 @@ memory_bytes=$(/usr/sbin/sysctl -n hw.memsize)
 
 print "soak smoke passed"
 print -- "- duration: ${duration_seconds} seconds"
+print -- "- fresh-caption playback probes: $playback_probe_count"
 print -- "- peak RSS: $(( maximum_rss_kb / 1024 )) MiB"
-print -- "- post-warmup RSS change: $(( rss_growth_kb / 1024 )) MiB"
+print -- "- peak post-warmup RSS growth: $(( peak_rss_growth_kb / 1024 )) MiB"
+print -- "- final post-warmup RSS change: $(( rss_growth_kb / 1024 )) MiB"
 print -- "- receipt: $receipt"
