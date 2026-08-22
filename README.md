@@ -121,6 +121,9 @@ The repository keeps model-dependent hardware checks explicit while ordinary CI 
 # Installed model + live captions with per-process network observation
 ./scripts/offline-smoke.sh
 
+# Known fixture + quit + log/app-storage retention inspection
+./scripts/post-quit-privacy-smoke.sh
+
 # Long-session stability and bounded memory
 ./scripts/soak-smoke.sh --minutes 30
 
