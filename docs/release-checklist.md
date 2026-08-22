@@ -9,12 +9,13 @@
 ./scripts/soak-smoke.sh --minutes 30
 ```
 
-`build-and-run.sh` prefers `SAID_LOCAL_SIGNING_IDENTITY` or the first available
-Apple Development identity. This gives local builds a stable designated
-requirement so macOS does not treat every rebuild as a completely new app for
-System Audio consent. If no development identity exists, it falls back to an
-explicitly labeled ad-hoc build. Neither local signature is a public release
-signature.
+`build-and-run.sh` uses an explicitly configured `SAID_LOCAL_SIGNING_IDENTITY`
+only when the developer has independently verified that identity's trust
+chain. Otherwise it produces an explicitly labeled ad-hoc build. A trusted
+Apple Development identity gives local builds a stable designated requirement
+so macOS can preserve System Audio consent across rebuilds; an ad-hoc build may
+need consent again after rebuilding. Neither local signature is a public
+release signature.
 
 The capture smoke plays a short synthetic phrase through macOS and checks only
 content-free operational logs for proof that audio reached the local caption
@@ -66,6 +67,9 @@ Hardened Runtime, Gatekeeper acceptance, and the stapled ticket.
 ## Current machine status
 
 `security find-identity -p codesigning -v` reports one Apple Development
-identity and no Developer ID Application identity. This Mac can therefore make
-stable local development builds, but it cannot honestly produce or validate the
-final Developer ID/notarized release.
+identity and no Developer ID Application identity. The development certificate
+itself validates, but a separately launched `codesign --verify` reports
+`CSSMERR_TP_NOT_TRUSTED` for artifacts it signs. Said therefore defaults to a
+valid ad-hoc local build on this Mac and does not automatically select that
+identity. The machine cannot honestly produce or validate the final Developer
+ID/notarized release.
