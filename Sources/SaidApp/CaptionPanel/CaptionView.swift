@@ -12,7 +12,7 @@ struct CaptionView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            if model.isPlacementMode { controlBar }
+            if model.captionControlsMode.isVisible { controlBar }
             captionCard
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -33,10 +33,12 @@ struct CaptionView: View {
             colorControls
             Spacer(minLength: 2)
             resizeHandle
-            Button("Done", action: onDone)
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                .keyboardShortcut(.defaultAction)
+            if model.captionControlsMode.showsDoneButton {
+                Button("Done", action: onDone)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .keyboardShortcut(.defaultAction)
+            }
         }
         .padding(.horizontal, 10)
         .frame(height: 48)

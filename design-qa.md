@@ -30,6 +30,9 @@ actions instead of copying unrelated document controls.
 - Dragging the panel background moves the captions; dragging the horizontal handle resizes them.
 - Layout and appearance persist through typed preferences.
 - Normal caption mode restores click-through behavior and removes the controls.
+- Hovering visible captions reveals the same controls without a menu round trip;
+  moving away collapses them after a short grace period. Hover mode omits Done,
+  while menu placement retains it as a clear explicit exit.
 - Deterministic tests cover size/font/color progression, width clamping, normalized placement, and width-aware caption capacity.
 
 ## Iteration history
@@ -37,6 +40,8 @@ actions instead of copying unrelated document controls.
 1. First capture exposed two P2 issues: the native material borrowed a strong green tint from the content behind it, and the font control did not reliably expose its current label at compact widths.
 2. Added a neutral charcoal layer over native material and replaced the compact menu with a fixed-size one-click font cycle control.
 3. Second focused comparison found no actionable P0, P1, or P2 visual defects. The remaining P3 difference is intentional: the source bar is wider and includes document controls that do not belong in Said.
+4. Live interaction review removed the menu-only dependency. The owner exercised
+   hover reveal and collapse in the running app and confirmed the direction.
 
 ## Final result
 

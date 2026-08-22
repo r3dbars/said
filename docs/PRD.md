@@ -115,7 +115,10 @@ There is no Pause or Stop item. Quitting stops the product.
 
 Use a borderless, nonactivating, click-through `NSPanel` at floating level. It
 joins all Spaces, works over full-screen apps, avoids normal window cycling,
-never steals focus, and becomes draggable only in explicit placement mode.
+and never steals focus. Hovering a visible caption strip reveals its controls
+and temporarily makes it draggable; moving away restores click-through
+behavior. Explicit placement remains available from the menu bar when no
+caption strip is visible.
 
 Default placement is horizontally centered roughly 64 points above the active
 display's visible bottom. Persist normalized display-relative placement, the
@@ -132,7 +135,7 @@ Committed text is full opacity. Tentative text uses the same type at roughly
 58–68% opacity. No italics, speaker labels, timestamps, icons, waveforms,
 colored hypotheses, springs, or per-character animation.
 
-The temporary caption-control bar offers three intentionally small appearance
+The hover/placement caption-control bar offers three intentionally small appearance
 sets: Small/Default/Large text, Rounded/Sans/Serif system fonts, and
 White/Warm Yellow/Cyan text. Size and font changes are one-click cycles; color
 swatches are direct one-click choices. Tentative text uses the selected color
@@ -151,11 +154,12 @@ continuous pixel scrolling, or a history drawer.
 
 ### Move, settings, privacy
 
-Move and resize mode shows a sample, makes the whole panel draggable, and adds
-a compact dark control bar above—not inside—the caption surface. The bar owns
-text size, font, text color, one horizontal Resize handle, and Done. Outside
-that explicit mode, the bar disappears and captions immediately return to
-click-through behavior. Width is clamped to the product/display bounds above,
+Hovering visible captions makes the whole panel draggable and adds a compact
+dark control bar above—not inside—the caption surface. The bar owns text size,
+font, text color, and one horizontal Resize handle; it collapses shortly after
+the pointer leaves and captions return to click-through behavior. The menu-bar
+Move & Resize mode remains available during silence, shows a sample, and adds
+an explicit Done control. Width is clamped to the product/display bounds above,
 while text size controls the fixed two-line height. Settings contains caption
 size, Reset Caption Layout, native
 launch-at-login via `SMAppService`, model storage/reinstall/reveal, version,
@@ -373,7 +377,7 @@ long-run memory cannot be bounded.
 | --- | --- | --- |
 | 2026-08-22 | Proceed with a local alpha on the available M5 Max | The virtual M1 run proved correctness and memory safety but its three-core paravirtual environment is not representative of physical-M1 real-time performance. A physical M1/16 GB receipt remains a public-release gate. |
 | 2026-08-22 | Roll captions in stable whole-line steps | A moving suffix caused the upper line to rewrap under the reader's eyes. The lower row now grows in place and advances upward only when a new row begins. |
-| 2026-08-22 | Directly move and resize the caption strip in one explicit mode | Normal captions must stay click-through, so one menu action temporarily reveals familiar drag, Resize, and Done affordances and persists the resulting display-relative layout. |
+| 2026-08-22 | Hover visible captions to adjust them; retain explicit menu placement | Hover removes unnecessary menu-bar friction while delayed collapse restores normal click-through behavior. The menu action remains the dependable path during silence and shows an explicit Done affordance. |
 | 2026-08-22 | Put a compact appearance bar above captions during layout editing | The owner selected a dense dark-toolbar reference and requested one-click size and color plus a few font choices without adding persistent normal-mode chrome. |
 
 ## Definition of done
