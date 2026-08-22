@@ -135,18 +135,22 @@ direction.
 
 ### Virtual M1 stress receipt
 
-GitHub Actions run
-[`32571635310`](https://github.com/r3dbars/said/actions/runs/32571635310)
-completed the same matrix on a virtual Apple M1 with three cores and 7 GB of
-memory under macOS 26.5.2. Every configuration loaded on Metal, produced the
+GitHub Actions runs
+[`32571635310`](https://github.com/r3dbars/said/actions/runs/32571635310) and
+[`32576873344`](https://github.com/r3dbars/said/actions/runs/32576873344)
+completed the same matrix on virtual Apple M1 runners with three cores and 7 GB
+of memory under macOS 26.5.2. Every configuration loaded on Metal, produced the
 expected transcript, stayed below 905 MB peak RSS, and recorded zero committed
 mutations or display divergences.
 
-The virtual runner is not real-time capable at the locked 320 ms configuration:
-the 11-second fixture required about 39.9 seconds of feed processing, with a
-1,194 ms p95 feed duration. Its GPU is exposed as an Apple paravirtual device,
-so this result is a useful correctness/memory stress test but not a substitute
-for a physical M1 latency receipt.
+The fresh current-`main` run completed in 10 minutes 28 seconds. Its two copies
+of the locked 320 ms / 160 ms configuration required 64.9–68.8 seconds of feed
+processing for the 11-second fixture, with 1,807–2,442 ms p95 feed durations and
+898 MB peak RSS. The earlier run required about 39.9 seconds with a 1,194 ms p95.
+The runner GPU is exposed as an Apple paravirtual device, so both results are
+useful correctness/memory stress tests but not substitutes for a physical M1
+latency receipt. The between-run variation is another reason not to infer
+shipping performance from this virtual environment.
 
 On 2026-08-22 the owner directed development toward a locally playable alpha on
 the available M5 Max. PR 0 therefore closes for alpha development with the
