@@ -1,0 +1,52 @@
+name: PR 0 M1 feasibility
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Parakeet Q8 Metal receipt
+    runs-on: macos-26
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out pinned source and submodules
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Record hardware and toolchain
+        run: |
+          mkdir -p Artifacts/Receipts/PR0
+          system_profiler SPHardwareDataType SPSoftwareDataType > Artifacts/Receipts/PR0/runner.txt
+          swift --version >> Artifacts/Receipts/PR0/runner.txt
+          uname -a >> Artifacts/Receipts/PR0/runner.txt
+
+      - name: Bootstrap verified native runtime
+        run: ./scripts/bootstrap.sh
+
+      - name: Download and verify pinned Q8 model
+        run: ./scripts/download-model.sh
+
+      - name: Build release harness
+        run: swift build -c release
+
+      - name: Run Metal benchmark matrix
+        run: ./scripts/performance-smoke.sh | tee Artifacts/Receipts/PR0/workflow-output.txt
+
+      - name: Upload content-free receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: said-pr0-m1-receipts
+          path: |
+            Artifacts/Receipts/PR0/runner.txt
+            Artifacts/Receipts/PR0/*.json
+            Artifacts/Receipts/PR0/*.log
+            Artifacts/Receipts/PR0/workflow-output.txt
+          if-no-files-found: warn
+          retention-days: 14

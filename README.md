@@ -10,9 +10,19 @@ does not upload audio or captions, and does not save a transcript.
 
 ## Status
 
-Said is in PR 0 feasibility work. The current gate is proving true streaming
-with Parakeet Unified EN 0.6B Q8_0 through pinned `transcribe.cpp` Swift
-bindings and Metal on an M1 Mac. The app UI does not exist yet.
+Said's PR 0 path now streams Parakeet Unified EN 0.6B Q8_0 through pinned
+`transcribe.cpp` Swift bindings on Metal. The reproducible spike passes on the
+available M5 Max; the required M1/16 GB baseline receipt is still outstanding.
+The app UI does not exist yet.
+
+To reproduce the available-host proof:
+
+```bash
+./scripts/bootstrap.sh
+./scripts/download-model.sh
+./scripts/streaming-smoke.sh
+./scripts/performance-smoke.sh
+```
 
 Read [the product requirements](docs/PRD.md) and
 [the model spike](docs/model-spike.md) for current evidence and blockers.
@@ -31,4 +41,3 @@ Read [the product requirements](docs/PRD.md) and
 Said application code is MIT licensed. Runtime and model artifacts retain their
 own licenses and notices. Public distribution is blocked until the exact pinned
 model and conversion license chain receives human review.
-
