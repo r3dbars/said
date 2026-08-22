@@ -82,9 +82,14 @@ final class AppController {
 
     func start() {
         menuBar.install()
-        modelLifecycle.prepareForLaunch()
-        if ProcessInfo.processInfo.arguments.contains("--preview-caption-controls") {
+        if ProcessInfo.processInfo.arguments.contains("--preview-hover-target") {
+            captionPanel.showPreview()
+        } else if ProcessInfo.processInfo.arguments.contains("--preview-hover-controls") {
+            captionPanel.showHoverControlsPreview()
+        } else if ProcessInfo.processInfo.arguments.contains("--preview-caption-controls") {
             captionPanel.beginPlacement()
+        } else {
+            modelLifecycle.prepareForLaunch()
         }
     }
 

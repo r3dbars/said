@@ -60,6 +60,20 @@ final class CaptionWindowingTests: XCTestCase {
         XCTAssertEqual(CaptionFontStyle.serif.next, .rounded)
     }
 
+    func testCaptionControlModesPreserveHoverAndMenuRoles() {
+        XCTAssertFalse(CaptionControlsMode.hidden.isVisible)
+        XCTAssertTrue(CaptionControlsMode.hidden.acceptsLiveCaptions)
+        XCTAssertFalse(CaptionControlsMode.hidden.showsDoneButton)
+
+        XCTAssertTrue(CaptionControlsMode.hover.isVisible)
+        XCTAssertTrue(CaptionControlsMode.hover.acceptsLiveCaptions)
+        XCTAssertFalse(CaptionControlsMode.hover.showsDoneButton)
+
+        XCTAssertTrue(CaptionControlsMode.placement.isVisible)
+        XCTAssertFalse(CaptionControlsMode.placement.acceptsLiveCaptions)
+        XCTAssertTrue(CaptionControlsMode.placement.showsDoneButton)
+    }
+
     func testActiveLineGrowsWithoutReflowingCompletedLine() {
         let first = CaptionWindowing.rolling(
             committed: "one two three four five six seven eight nine ten eleven",

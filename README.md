@@ -33,7 +33,7 @@
 
 Said lives in the menu bar, stays above full-screen apps, never steals keyboard focus, and hides itself when there is nothing useful to read. Captions grow along the lower row, then advance upward one complete row at a time, so your eyes always have a stable place to return to while tentative words settle softly.
 
-Choose **Move & Resize Captions…** from the menu bar whenever you want to place the strip somewhere else or tune its appearance. A compact bar above the subtitles gives you one-click text sizing, Rounded/Sans/Serif choices, White/Warm Yellow/Cyan text, and a horizontal Resize handle. Click Done and normal captions immediately return to click-through mode.
+Hover over visible captions to reveal a compact control bar directly above them. It gives you one-click text sizing, Rounded/Sans/Serif choices, White/Warm Yellow/Cyan text, and a horizontal Resize handle; you can also drag the strip itself. Move away and the controls collapse back to click-through captions. **Move & Resize Captions…** remains in the menu bar so the same controls are always available during silence.
 
 ## Why Said
 
@@ -138,7 +138,7 @@ Current evidence on the development Mac:
 
 - Real system audio reaches the local Parakeet caption pipeline.
 - Metal model loading and true streaming are proven.
-- 37 deterministic tests and the static privacy gate pass.
+- 38 deterministic tests and the static privacy gate pass.
 - Caption state, PCM queues, capture recovery, model verification, and resumable downloads have regression coverage.
 - GitHub Actions builds and verifies an arm64 local app bundle without bundling the speech model.
 

@@ -13,6 +13,10 @@ control over macOS swap behavior.
 - Said's own preferences, model receipt, and update metadata when updates are
   added.
 
+While a caption strip is visible, Said compares the current pointer location
+to the strip's bounds so hovering can reveal its controls. Pointer locations
+are not logged, saved, transmitted, or used outside that interaction.
+
 ## What Said does not access
 
 - Microphone or camera.

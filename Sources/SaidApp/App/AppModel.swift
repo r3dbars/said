@@ -7,7 +7,7 @@ import ServiceManagement
 @MainActor
 final class AppModel: ObservableObject {
     @Published var captionWindow = CaptionWindow.empty
-    @Published var isPlacementMode = false
+    @Published var captionControlsMode = CaptionControlsMode.hidden
     @Published var captureState: CaptureState = .idle
     @Published var modelState: ModelState = .checking
     @Published var audioLevel = 0.0

@@ -11,8 +11,11 @@ final class CaptionPanelController {
     private let panel: NSPanel
     private let defaults = UserDefaults.standard
     private var visibilityTask: Task<Void, Never>?
+    private var hoverDismissTask: Task<Void, Never>?
+    private var hoverCancellable: AnyCancellable?
     private var textSizeCancellable: AnyCancellable?
     private var resizeStartWidth: CGFloat?
+    private var visibilityEpoch = 0
 
     init(model: AppModel) {
         self.model = model
@@ -33,6 +36,8 @@ final class CaptionPanelController {
     }
 
     func showPreview() {
+        visibilityTask?.cancel()
+        visibilityEpoch += 1
         model.captionWindow = CaptionWindow(lines: [
             CaptionLine(
                 id: 0,
@@ -41,11 +46,12 @@ final class CaptionPanelController {
             ),
             CaptionLine(id: 1, committed: "", tentative: "Nothing is uploaded."),
         ])
-        model.isPlacementMode = false
+        model.captionControlsMode = .hidden
         panel.ignoresMouseEvents = true
         panel.isMovableByWindowBackground = false
         panel.alphaValue = 0
         panel.orderFrontRegardless()
+        startHoverMonitoring()
         if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
             panel.alphaValue = 1
             return
@@ -56,32 +62,23 @@ final class CaptionPanelController {
         }
     }
 
+    func showHoverControlsPreview() {
+        showPreview()
+        revealHoverControls()
+    }
+
     func show(_ snapshot: ASRTextSnapshot) {
-        guard !model.isPlacementMode else { return }
+        guard model.captionControlsMode.acceptsLiveCaptions else { return }
         model.captionWindow = CaptionWindowing.rolling(
             committed: snapshot.committed,
             tentative: snapshot.tentative,
             wordsPerLine: wordsPerLine
         )
-        model.isPlacementMode = false
-        panel.ignoresMouseEvents = true
+        panel.ignoresMouseEvents = !model.captionControlsMode.isVisible
         panel.orderFrontRegardless()
         panel.alphaValue = 1
-        visibilityTask?.cancel()
-        visibilityTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(1.8))
-            guard !Task.isCancelled, let self else { return }
-            if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
-                self.panel.orderOut(nil)
-                return
-            }
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.18
-                self.panel.animator().alphaValue = 0
-            } completionHandler: { [weak self] in
-                Task { @MainActor in self?.panel.orderOut(nil) }
-            }
-        }
+        startHoverMonitoring()
+        scheduleFadeOut()
     }
 
     private var wordsPerLine: Int {
@@ -91,12 +88,126 @@ final class CaptionPanelController {
         )
     }
 
+    private func scheduleFadeOut() {
+        visibilityTask?.cancel()
+        visibilityEpoch += 1
+        let scheduledEpoch = visibilityEpoch
+        guard model.captionControlsMode == .hidden else { return }
+
+        visibilityTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1.8))
+            guard !Task.isCancelled,
+                  let self,
+                  self.visibilityEpoch == scheduledEpoch,
+                  self.model.captionControlsMode == .hidden
+            else { return }
+            if NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+                self.panel.orderOut(nil)
+                self.stopHoverMonitoring()
+                return
+            }
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.18
+                self.panel.animator().alphaValue = 0
+            } completionHandler: { [weak self] in
+                Task { @MainActor in
+                    guard let self,
+                          self.visibilityEpoch == scheduledEpoch,
+                          self.model.captionControlsMode == .hidden
+                    else { return }
+                    self.panel.orderOut(nil)
+                    self.stopHoverMonitoring()
+                }
+            }
+        }
+    }
+
+    private func startHoverMonitoring() {
+        guard hoverCancellable == nil else { return }
+        hoverCancellable = Timer.publish(every: 0.10, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in self?.updateHoverState() }
+    }
+
+    private func stopHoverMonitoring() {
+        hoverCancellable?.cancel()
+        hoverCancellable = nil
+        hoverDismissTask?.cancel()
+        hoverDismissTask = nil
+    }
+
+    private func updateHoverState() {
+        guard model.captionControlsMode != .placement else { return }
+        guard panel.isVisible, !model.captionWindow.lines.isEmpty else {
+            if model.captionControlsMode == .hover {
+                collapseHoverControls(scheduleFade: false)
+            }
+            stopHoverMonitoring()
+            return
+        }
+
+        if panel.frame.contains(NSEvent.mouseLocation) {
+            hoverDismissTask?.cancel()
+            hoverDismissTask = nil
+            if model.captionControlsMode == .hidden {
+                revealHoverControls()
+            }
+        } else if model.captionControlsMode == .hover {
+            scheduleHoverDismiss()
+        }
+    }
+
+    private func revealHoverControls() {
+        guard model.captionControlsMode == .hidden else { return }
+        visibilityTask?.cancel()
+        visibilityEpoch += 1
+        model.captionControlsMode = .hover
+        setPanelHeight(
+            model.captionTextSize.panelHeight
+                + CaptionPanelLayout.editingToolbarExtraHeight
+        )
+        panel.alphaValue = 1
+        panel.ignoresMouseEvents = false
+        panel.isMovableByWindowBackground = true
+        if let screen = panel.screen ?? activeScreen() {
+            constrainPanel(to: screen.visibleFrame)
+        }
+    }
+
+    private func scheduleHoverDismiss() {
+        guard hoverDismissTask == nil, resizeStartWidth == nil else { return }
+        hoverDismissTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !Task.isCancelled, let self else { return }
+            self.hoverDismissTask = nil
+            guard self.model.captionControlsMode == .hover,
+                  !self.panel.frame.contains(NSEvent.mouseLocation)
+            else { return }
+            self.collapseHoverControls(scheduleFade: true)
+        }
+    }
+
+    private func collapseHoverControls(scheduleFade: Bool) {
+        guard model.captionControlsMode == .hover else { return }
+        hoverDismissTask?.cancel()
+        hoverDismissTask = nil
+        finishResize()
+        model.captionControlsMode = .hidden
+        setPanelHeight(model.captionTextSize.panelHeight)
+        saveLayout()
+        panel.ignoresMouseEvents = true
+        panel.isMovableByWindowBackground = false
+        if scheduleFade { scheduleFadeOut() }
+    }
+
     func beginPlacement() {
         visibilityTask?.cancel()
+        stopHoverMonitoring()
+        visibilityEpoch += 1
         model.captionWindow = CaptionWindow(lines: [
             CaptionLine(id: 0, committed: "Move and resize captions.", tentative: ""),
         ])
-        model.isPlacementMode = true
+        model.captionControlsMode = .placement
         setPanelHeight(model.captionTextSize.panelHeight + CaptionPanelLayout.editingToolbarExtraHeight)
         panel.ignoresMouseEvents = false
         panel.isMovableByWindowBackground = true
@@ -107,13 +218,15 @@ final class CaptionPanelController {
     }
 
     func endPlacement() {
+        visibilityEpoch += 1
         finishResize()
-        model.isPlacementMode = false
+        model.captionControlsMode = .hidden
         setPanelHeight(model.captionTextSize.panelHeight)
         saveLayout()
         panel.ignoresMouseEvents = true
         panel.isMovableByWindowBackground = false
         panel.orderOut(nil)
+        stopHoverMonitoring()
     }
 
     func resetLayout() {
@@ -131,8 +244,12 @@ final class CaptionPanelController {
     }
 
     func resizePanel(horizontalTranslation: CGFloat) {
-        guard model.isPlacementMode, let screen = panel.screen ?? activeScreen() else { return }
+        guard model.captionControlsMode.isVisible,
+              let screen = panel.screen ?? activeScreen()
+        else { return }
         if resizeStartWidth == nil { resizeStartWidth = panel.frame.width }
+        hoverDismissTask?.cancel()
+        hoverDismissTask = nil
         guard let resizeStartWidth else { return }
 
         let width = CaptionPanelLayout.clampedWidth(
@@ -156,9 +273,11 @@ final class CaptionPanelController {
 
     func clearAndHide() {
         visibilityTask?.cancel()
+        stopHoverMonitoring()
+        visibilityEpoch += 1
         resizeStartWidth = nil
         model.captionWindow = .empty
-        model.isPlacementMode = false
+        model.captionControlsMode = .hidden
         setPanelHeight(model.captionTextSize.panelHeight)
         panel.ignoresMouseEvents = true
         panel.isMovableByWindowBackground = false
@@ -241,7 +360,7 @@ final class CaptionPanelController {
     }
 
     private func resizePanel(for size: CaptionTextSize) {
-        let editingHeight = model.isPlacementMode
+        let editingHeight = model.captionControlsMode.isVisible
             ? CaptionPanelLayout.editingToolbarExtraHeight
             : 0
         setPanelHeight(size.panelHeight + editingHeight)
