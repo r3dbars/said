@@ -43,5 +43,8 @@ the pinned model identity. They never contain audio samples, caption text,
 hypotheses, application names, window titles, URLs, or user paths.
 
 Run `./scripts/privacy-smoke.sh` to enforce the static permission, dependency,
-logging, binary-string, and app-storage boundaries. The live offline-network
+logging, caption-path networking, binary-string, and app-storage boundaries.
+A successful run writes a content-free JSON receipt under
+`Artifacts/Receipts/Privacy/`; the receipt explicitly records that it is a
+static check and not a runtime network observation. The live offline-network
 and post-quit marker checks remain hardware acceptance gates before release.
