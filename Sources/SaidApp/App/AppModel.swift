@@ -8,6 +8,7 @@ import ServiceManagement
 final class AppModel: ObservableObject {
     @Published var captionWindow = CaptionWindow.empty
     @Published var captionControlsMode = CaptionControlsMode.hidden
+    @Published var captionToolbarPlacement = CaptionToolbarPlacement.above
     @Published var captureState: CaptureState = .idle
     @Published var modelState: ModelState = .checking
     @Published private(set) var captionsEnabled: Bool {
@@ -24,6 +25,9 @@ final class AppModel: ObservableObject {
     }
     @Published var captionTextColor: CaptionTextColor {
         didSet { defaults.set(captionTextColor.rawValue, forKey: Keys.captionTextColor) }
+    }
+    @Published var captionPanelWidth: CaptionPanelWidth {
+        didSet { defaults.set(captionPanelWidth.rawValue, forKey: Keys.captionPanelWidth) }
     }
 
     var onResetCaptionLayout: (() -> Void)?
@@ -50,6 +54,14 @@ final class AppModel: ObservableObject {
         captionTextColor = CaptionTextColor(
             rawValue: defaults.string(forKey: Keys.captionTextColor) ?? ""
         ) ?? .white
+        if let stored = defaults.string(forKey: Keys.captionPanelWidth),
+           let width = CaptionPanelWidth(rawValue: stored) {
+            captionPanelWidth = width
+        } else if defaults.object(forKey: Keys.legacyCaptionWidth) != nil {
+            captionPanelWidth = .nearest(to: defaults.double(forKey: Keys.legacyCaptionWidth))
+        } else {
+            captionPanelWidth = .medium
+        }
         launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
     }
 
@@ -109,5 +121,7 @@ final class AppModel: ObservableObject {
         static let captionTextSize = "captionTextSize"
         static let captionFontStyle = "captionFontStyle"
         static let captionTextColor = "captionTextColor"
+        static let captionPanelWidth = "captionPanelWidth"
+        static let legacyCaptionWidth = "captionWidth"
     }
 }

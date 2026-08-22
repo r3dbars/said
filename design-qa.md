@@ -3,45 +3,45 @@
 ## Evidence
 
 - Source visual truth: `/var/folders/rm/99g7pxgn6d72plzypdcy18j40000gn/T/TemporaryItems/NSIRD_screencaptureui_bjEBbV/Screenshot 2026-08-22 at 2.53.28 PM.png` (2222 × 160 px).
-- Implementation capture: `/private/tmp/said-caption-controls-v2.png` (3024 × 1964 px).
-- Focused same-input comparison: [`docs/assets/caption-toolbar-comparison.png`](docs/assets/caption-toolbar-comparison.png) (1220 × 258 px). The reference is above; Said is below.
-- State: Move & Resize mode, dark appearance, 26 pt Rounded font, Warm Yellow selected.
+- Current native implementation capture: `/private/tmp/said-toolbar-14pt-xs.png`.
+- Same-input visual comparison: [`docs/assets/caption-toolbar-comparison-v3.png`](docs/assets/caption-toolbar-comparison-v3.png). The supplied reference is above and Said is below.
+- Verified state: 14 pt Sans, Warm Yellow, XS width selected, placement mode, panel in the upper half of the display with the toolbar below the captions.
 
-The supplied screenshot is a visual reference for a compact, single-row dark
-formatting bar. Said intentionally adapts that pattern to caption-specific
-actions instead of copying unrelated document controls.
+The screenshot is the visual reference for a compact, neutral, single-row dark
+formatting bar. Said adapts its density and direct-value controls to captions
+without copying unrelated document actions.
 
 ## Comparison
 
 | Surface | Result |
 | --- | --- |
-| Typography | Current point size and font family are directly readable. Button labels and weights remain legible at the compact height. |
-| Spacing | Controls form clear size, font, color, and layout groups with separators. Flexible space keeps resize and Done anchored to the trailing edge. |
-| Color | The surface is neutral charcoal like the reference. White, warm yellow, and cyan are direct one-click caption choices; the selected swatch has a high-contrast ring. |
-| Icons/assets | Native SF Symbols are used for move, size, and horizontal resize. No approximate or decorative assets were introduced. |
-| Copy | The bar exposes only the current font, point size, direct appearance controls, and Done. Help and accessibility labels explain icons without adding visible clutter. |
-| Geometry | The bar floats above the caption card as one compact row, while the caption panel retains its independent two-line reading surface. |
+| Typography | Current values are directly readable as `14px`, `Aa Sans`, and `XS`; the controls no longer depend on unlabeled arrow targets. |
+| Spacing | Move, text size, font, color, width, and Done form one compact left-aligned cluster with consistent separators. XS still fits without a second row. |
+| Color | The neutral charcoal surface follows the reference. White, warm yellow, and cyan remain direct choices with a clear selected ring. |
+| Icons/assets | The only icon is the native move affordance. Sizing uses readable values instead of approximate resize imagery. |
+| Geometry | The caption card and toolbar remain separate surfaces. At the top of the display the toolbar renders below the captions; lower placement renders it above. |
+| Accessibility | The native tree exposes point size, font, each color, width value, and Done. Size and width buttons announce their full cycling ranges. |
 
 ## Interaction evidence
 
-- Size changes are one click and bounded to the three V1 sizes.
-- Font is one click and cycles Rounded, Sans, and Serif while showing the current choice.
-- Text color changes immediately from direct swatches.
-- Dragging the panel background moves the captions; dragging the horizontal handle resizes them.
-- Layout and appearance persist through typed preferences.
-- Normal caption mode restores click-through behavior and removes the controls.
-- Hovering visible captions reveals the same controls without a menu round trip;
-  moving away collapses them after a short grace period. Hover mode omits Done,
-  while menu placement retains it as a clear explicit exit.
-- Deterministic tests cover size/font/color progression, width clamping, normalized placement, and width-aware caption capacity.
+- Clicking the point-size value was exercised through `26 → 34 → 44 → 56 → 14`; the card height followed the selection.
+- The complete text-size cycle is 14, 18, 22, 26, 34, 44, and 56 points.
+- Clicking the width value was exercised through `S → M → L → XL → XS`; no drag target remains.
+- Width choices map to substantially different requested widths and clamp safely to the current display.
+- Moving the panel is still available from the panel background while controls are visible.
+- A deterministic placement policy puts the toolbar below captions in the upper display half and above them in the lower half.
+- Font, color, width, and point-size selections persist as ordinary local settings.
+- Normal caption mode remains click-through after the hover grace period.
+- Forty-one deterministic tests and the privacy smoke pass.
 
 ## Iteration history
 
-1. First capture exposed two P2 issues: the native material borrowed a strong green tint from the content behind it, and the font control did not reliably expose its current label at compact widths.
-2. Added a neutral charcoal layer over native material and replaced the compact menu with a fixed-size one-click font cycle control.
-3. Second focused comparison found no actionable P0, P1, or P2 visual defects. The remaining P3 difference is intentional: the source bar is wider and includes document controls that do not belong in Said.
-4. Live interaction review removed the menu-only dependency. The owner exercised
-   hover reveal and collapse in the running app and confirmed the direction.
+1. The original horizontal drag handle was hard to acquire and did not give the user a predictable resulting width.
+2. A first width stepper still used small left/right arrows and kept the width range too narrow.
+3. Replaced it with one clickable current-value label and expanded XS–XL to a much wider 360–1280 point requested range.
+4. Replaced font-size arrows with the same current-value interaction and expanded the range down to 14 points and up to 56 points.
+5. Removed trailing alignment, kept the control cluster left-facing, and added automatic above/below toolbar placement based on display position.
+6. The final comparison found no actionable P0, P1, or P2 visual defects. The cursor highlight on the width value is an intentional hovered state.
 
 ## Final result
 

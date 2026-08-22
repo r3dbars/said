@@ -5,16 +5,32 @@ final class CaptionWindowingTests: XCTestCase {
     func testCaptionPanelWidthClampsToProductAndDisplayBounds() {
         XCTAssertEqual(
             CaptionPanelLayout.clampedWidth(300, visibleScreenWidth: 1_440),
-            440
+            360
         )
         XCTAssertEqual(
-            CaptionPanelLayout.clampedWidth(1_200, visibleScreenWidth: 1_440),
-            980
+            CaptionPanelLayout.clampedWidth(1_400, visibleScreenWidth: 1_440),
+            1_280
         )
         XCTAssertEqual(
-            CaptionPanelLayout.clampedWidth(900, visibleScreenWidth: 1_000),
-            720
+            CaptionPanelLayout.clampedWidth(1_000, visibleScreenWidth: 1_000),
+            900
         )
+    }
+
+    func testCaptionPanelWidthChoicesAreOrderedBoundedAndMigratable() {
+        XCTAssertEqual(
+            CaptionPanelWidth.allCases.map(\.title),
+            ["XS", "S", "M", "L", "XL"]
+        )
+        XCTAssertEqual(
+            CaptionPanelWidth.allCases.map(\.preferredWidth),
+            [360, 520, 760, 1_000, 1_280]
+        )
+        XCTAssertEqual(CaptionPanelWidth.extraSmall.next, .small)
+        XCTAssertEqual(CaptionPanelWidth.medium.next, .large)
+        XCTAssertEqual(CaptionPanelWidth.extraLarge.next, .extraSmall)
+        XCTAssertEqual(CaptionPanelWidth.nearest(to: 745), .medium)
+        XCTAssertEqual(CaptionPanelWidth.nearest(to: 1_250), .extraLarge)
     }
 
     func testCaptionRowCapacityTracksWidthAndTextSize() {
@@ -37,19 +53,31 @@ final class CaptionWindowingTests: XCTestCase {
     }
 
     func testCaptionPanelHeightsAccommodateEachTextSize() {
+        XCTAssertEqual(CaptionTextSize.tiny.panelHeight, 72)
+        XCTAssertEqual(CaptionTextSize.extraSmall.panelHeight, 82)
+        XCTAssertEqual(CaptionTextSize.compact.panelHeight, 96)
         XCTAssertEqual(CaptionTextSize.small.panelHeight, 110)
         XCTAssertEqual(CaptionTextSize.standard.panelHeight, 126)
         XCTAssertEqual(CaptionTextSize.large.panelHeight, 160)
-        XCTAssertGreaterThan(CaptionTextSize.large.panelHeight, CaptionTextSize.standard.panelHeight)
+        XCTAssertEqual(CaptionTextSize.extraLarge.panelHeight, 190)
+        XCTAssertEqual(CaptionTextSize.allCases.map(\.pointSize), [14, 18, 22, 26, 34, 44, 56])
     }
 
     func testCaptionTextSizeStepsAreBounded() {
-        XCTAssertEqual(CaptionTextSize.small.smaller, .small)
+        XCTAssertEqual(CaptionTextSize.tiny.smaller, .tiny)
+        XCTAssertEqual(CaptionTextSize.tiny.larger, .extraSmall)
+        XCTAssertEqual(CaptionTextSize.compact.smaller, .extraSmall)
         XCTAssertEqual(CaptionTextSize.small.larger, .standard)
         XCTAssertEqual(CaptionTextSize.standard.smaller, .small)
         XCTAssertEqual(CaptionTextSize.standard.larger, .large)
         XCTAssertEqual(CaptionTextSize.large.smaller, .standard)
-        XCTAssertEqual(CaptionTextSize.large.larger, .large)
+        XCTAssertEqual(CaptionTextSize.large.larger, .extraLarge)
+        XCTAssertEqual(CaptionTextSize.extraLarge.larger, .extraLarge)
+        XCTAssertEqual(CaptionTextSize.tiny.next, .extraSmall)
+        XCTAssertEqual(CaptionTextSize.small.next, .standard)
+        XCTAssertEqual(CaptionTextSize.standard.next, .large)
+        XCTAssertEqual(CaptionTextSize.large.next, .extraLarge)
+        XCTAssertEqual(CaptionTextSize.extraLarge.next, .tiny)
     }
 
     func testCaptionAppearanceChoicesStaySmallAndExplicit() {
@@ -72,6 +100,21 @@ final class CaptionWindowingTests: XCTestCase {
         XCTAssertTrue(CaptionControlsMode.placement.isVisible)
         XCTAssertFalse(CaptionControlsMode.placement.acceptsLiveCaptions)
         XCTAssertTrue(CaptionControlsMode.placement.showsDoneButton)
+    }
+
+    func testToolbarMovesBelowCaptionsInUpperHalfOfDisplay() {
+        XCTAssertEqual(
+            CaptionToolbarPlacement.forVerticalPosition(panelMidY: 300, displayMidY: 500),
+            .above
+        )
+        XCTAssertEqual(
+            CaptionToolbarPlacement.forVerticalPosition(panelMidY: 500, displayMidY: 500),
+            .below
+        )
+        XCTAssertEqual(
+            CaptionToolbarPlacement.forVerticalPosition(panelMidY: 800, displayMidY: 500),
+            .below
+        )
     }
 
     func testActiveLineGrowsWithoutReflowingCompletedLine() {
