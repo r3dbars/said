@@ -26,7 +26,6 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
     private var recoveryInFlight = false
     private var watchdog: DispatchSourceTimer?
 
-    private static let firstBufferTimeout: Duration = .seconds(5)
     private static let stallSeconds = 4.0
     private static let maximumRecoveryAttempts = 1
 
@@ -48,13 +47,12 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
 
         do {
             try setupAndStart(generation: captureGeneration)
-            try await waitForFirstBuffer(generation: captureGeneration)
             let valid = lock.withLock {
-                guard generation == captureGeneration, receivedFirstBuffer else { return false }
+                guard generation == captureGeneration else { return false }
                 internalState = .capturing
                 return true
             }
-            guard valid else { throw CaptureFailure.startTimedOut }
+            guard valid else { throw CancellationError() }
             startWatchdog(generation: captureGeneration)
         } catch {
             teardownResources()
@@ -197,18 +195,6 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         handler?(buffer)
     }
 
-    private func waitForFirstBuffer(generation captureGeneration: UInt64) async throws {
-        let clock = ContinuousClock()
-        let deadline = clock.now.advanced(by: Self.firstBufferTimeout)
-        while clock.now < deadline {
-            let status = lock.withLock { (generation == captureGeneration, receivedFirstBuffer) }
-            guard status.0 else { throw CancellationError() }
-            if status.1 { return }
-            try await clock.sleep(for: .milliseconds(50))
-        }
-        throw CaptureFailure.startTimedOut
-    }
-
     private func startWatchdog(generation captureGeneration: UInt64) {
         stopWatchdog()
         let timer = DispatchSource.makeTimerSource(queue: watchdogQueue)
@@ -260,6 +246,12 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             Thread.sleep(forTimeInterval: 0.15)
             do {
                 try self.setupAndStart(generation: captureGeneration)
+                self.lock.withLock {
+                    if self.generation == captureGeneration {
+                        self.internalState = .capturing
+                        self.recoveryInFlight = false
+                    }
+                }
             } catch {
                 self.lock.withLock {
                     if self.generation == captureGeneration {

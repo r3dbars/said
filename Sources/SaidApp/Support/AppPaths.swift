@@ -1,12 +1,11 @@
 import Foundation
+import SaidModel
 
 enum AppPaths {
     static let modelFilename = "parakeet-unified-en-0.6b-Q8_0.gguf"
 
     static var installedModelURL: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Said/Models/parakeet-unified-en-0.6b", isDirectory: true)
-            .appendingPathComponent(modelFilename)
+        ModelStore().modelURL(for: .saidEnglishQ8)
     }
 
     static var developmentModelURL: URL {

@@ -18,7 +18,7 @@ struct SetupView: View {
                 symbol: "speaker.wave.2.fill",
                 title: "System Audio",
                 status: systemAudioStatus,
-                explanation: "Said will use an audio-only macOS capture stream. It will not capture screen pixels or your microphone."
+                explanation: "Said uses macOS System Audio Recording Only. It cannot capture screen pixels or your microphone."
             )
             if model.captureState == .capturing {
                 ProgressView(value: model.audioLevel)
@@ -28,9 +28,18 @@ struct SetupView: View {
             SetupRow(
                 symbol: "waveform",
                 title: "Speech Model",
-                status: "Verified locally",
-                explanation: "The local English speech model is installed for this development build."
+                status: speechModelStatus,
+                explanation: "A local English speech model is downloaded once. After that, captions work offline."
             )
+            if case let .downloading(received, total) = model.modelState {
+                VStack(alignment: .leading, spacing: 5) {
+                    ProgressView(value: model.modelState.progress ?? 0)
+                        .progressViewStyle(.linear)
+                    Text("\(formatBytes(received)) of \(formatBytes(total))")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
 
             HStack {
                 Text("Hear. Read. Gone.")
@@ -39,14 +48,46 @@ struct SetupView: View {
                 Spacer()
                 HStack {
                     Button("Preview Captions", action: onPreview)
-                    Button("Test System Audio", action: onStartAudio)
+                    Button(primaryActionTitle, action: onStartAudio)
                         .buttonStyle(.borderedProminent)
+                        .disabled(isPrimaryActionDisabled)
                 }
                 .controlSize(.large)
             }
         }
         .padding(28)
         .frame(width: 560)
+    }
+
+    private var speechModelStatus: String {
+        switch model.modelState {
+        case .checking: "Checking"
+        case .notDownloaded: "Not downloaded"
+        case .downloading: "Downloading"
+        case .verifying: "Verifying"
+        case .ready: "Ready"
+        case .failed(.verificationFailed): "Verification failed"
+        case .failed: "Needs retry"
+        }
+    }
+
+    private var primaryActionTitle: String {
+        switch model.modelState {
+        case .ready: "Start Captions"
+        case .failed: "Retry Setup"
+        default: "Set Up Said"
+        }
+    }
+
+    private var isPrimaryActionDisabled: Bool {
+        switch model.modelState {
+        case .checking, .downloading, .verifying: true
+        default: model.captureState == .preparing || model.captureState == .starting || model.captureState == .capturing
+        }
+    }
+
+    private func formatBytes(_ bytes: Int64) -> String {
+        ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
     }
 
     private var systemAudioStatus: String {

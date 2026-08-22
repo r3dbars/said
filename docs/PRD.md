@@ -199,8 +199,10 @@ process, feed it through a private aggregate device, and request only
 `NSAudioCaptureUsageDescription`. This must place Said under macOS's **System
 Audio Recording Only** permission category. Never include a screen-capture
 usage description or create a ScreenCaptureKit stream. Own buffer memory before
-asynchronous dispatch. Do not claim capture until a valid nonempty buffer
-arrives within five seconds.
+asynchronous dispatch. Core Audio process taps may emit no callbacks while the
+Mac is silent, so successful tap/device startup establishes readiness and the
+first nonempty callback proves the data path once playback begins. Never report
+silence alone as a start failure.
 
 Port generation/epoch ownership, explicit phases, one recovery claim, and a
 3–5 second post-first-buffer watchdog. Invalidate stale callbacks, reconstruct

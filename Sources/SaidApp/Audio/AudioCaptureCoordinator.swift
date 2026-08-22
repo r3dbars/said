@@ -20,17 +20,12 @@ final class AudioCaptureCoordinator {
         capture = CoreAudioSystemAudioCapture()
     }
 
-    func start() {
+    func start(modelURL: URL) {
         guard model.captureState == .idle || isFailure(model.captureState) else { return }
         model.captureState = .preparing
         SaidLogger.capture.info("Starting system-audio caption pipeline")
         Task {
             do {
-                guard let modelURL = AppPaths.availableModelURL else {
-                    SaidLogger.model.error("Verified local model is unavailable")
-                    model.captureState = .failed(.unavailable)
-                    return
-                }
                 let recognizer = ParakeetUnifiedASR(modelPath: modelURL.path)
                 self.recognizer = recognizer
                 try await recognizer.loadModel()
@@ -53,33 +48,41 @@ final class AudioCaptureCoordinator {
                             let result = inputContinuation.yield(block)
                             if case .dropped = result {
                                 Task { @MainActor in
-                                    self.model.captureState = .failed(.unavailable)
                                     SaidLogger.audio.error("Audio block queue overflowed")
+                                    self.failPipeline(.unavailable)
                                 }
                             }
                         },
-                        onError: { [weak model] in
-                            Task { @MainActor in model?.captureState = .failed(.unavailable) }
+                        onError: { [weak self] in
+                            Task { @MainActor in self?.failPipeline(.unavailable) }
                         }
                     )
                 }
                 model.captureState = .capturing
-                SaidLogger.capture.info("System-audio first-buffer proof passed")
+                SaidLogger.capture.info("System-audio tap started; awaiting playback buffers")
                 beginStatePolling()
             } catch let failure as CaptureFailure {
                 SaidLogger.capture.error(
                     "System-audio capture failed with safe code \(failure.rawValue, privacy: .public)"
                 )
-                model.captureState = .failed(failure)
+                await teardownResources(finalState: .failed(failure))
             } catch {
                 SaidLogger.capture.error("Caption pipeline failed before capture")
-                model.captureState = .failed(.unavailable)
+                await teardownResources(finalState: .failed(.unavailable))
             }
         }
     }
 
     func stop() {
+        Task { await stopAndWait() }
+    }
+
+    func stopAndWait() async {
         SaidLogger.capture.info("Stopping system-audio caption pipeline")
+        await teardownResources(finalState: .idle)
+    }
+
+    private func teardownResources(finalState: CaptureState) async {
         statePollTask?.cancel()
         statePollTask = nil
         blockContinuation?.finish()
@@ -87,14 +90,12 @@ final class AudioCaptureCoordinator {
         feedTask?.cancel()
         feedTask = nil
         normalizedBlockCount = 0
-        Task {
-            await capture.stop()
-            await recognizer?.resetStream()
-            recognizer = nil
-            audioPipeline.reset()
-            model.audioLevel = 0
-            model.captureState = .idle
-        }
+        await capture.stop()
+        await recognizer?.resetStream()
+        recognizer = nil
+        audioPipeline.reset()
+        model.audioLevel = 0
+        model.captureState = finalState
     }
 
     private func beginFeedLoop(
@@ -124,12 +125,23 @@ final class AudioCaptureCoordinator {
                     }
                 } catch {
                     SaidLogger.asr.error("Local recognizer feed failed")
-                    self?.model.captureState = .failed(.unavailable)
+                    self?.failPipeline(.unavailable)
                     return
                 }
             }
         }
         return continuation
+    }
+
+    private func failPipeline(_ failure: CaptureFailure) {
+        guard !isFailure(model.captureState) else { return }
+        statePollTask?.cancel()
+        statePollTask = nil
+        model.captureState = .failed(failure)
+        Task { [weak self] in
+            guard let self else { return }
+            await teardownResources(finalState: .failed(failure))
+        }
     }
 
     private func beginStatePolling() {

@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject var model: AppModel
     let showPrivacy: Bool
+    @State private var confirmRemoval = false
 
     var body: some View {
         Form {
@@ -45,13 +46,30 @@ struct SettingsView: View {
                     }
                 }
                 Section("Storage") {
-                    LabeledContent("Speech model", value: "Parakeet Unified English")
+                    LabeledContent("Speech model", value: "English speech model")
                     LabeledContent("Approximate size", value: "731 MB")
+                    HStack {
+                        Button("Reinstall Model…") { model.reinstallModel() }
+                        Button("Reveal in Finder") { model.revealModel() }
+                        Spacer()
+                        Button("Remove Local Model…", role: .destructive) {
+                            confirmRemoval = true
+                        }
+                    }
                 }
             }
         }
         .formStyle(.grouped)
         .padding(8)
         .frame(width: 500, height: showPrivacy ? 460 : 330)
+        .confirmationDialog(
+            "Remove the local speech model?",
+            isPresented: $confirmRemoval,
+            titleVisibility: .visible
+        ) {
+            Button("Remove Model", role: .destructive) { model.removeModel() }
+        } message: {
+            Text("Said will need to download the model again before captions can start.")
+        }
     }
 }

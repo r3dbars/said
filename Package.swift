@@ -9,6 +9,7 @@ let package = Package(
         .library(name: "SaidCore", targets: ["SaidCore"]),
         .library(name: "SaidCapture", targets: ["SaidCapture"]),
         .library(name: "SaidASR", targets: ["SaidASR"]),
+        .library(name: "SaidModel", targets: ["SaidModel"]),
         .executable(name: "Said", targets: ["SaidApp"]),
         .executable(name: "said-model-spike", targets: ["SaidModelSpike"]),
     ],
@@ -18,6 +19,7 @@ let package = Package(
     targets: [
         .target(name: "SaidCore"),
         .target(name: "SaidCapture", dependencies: ["SaidCore"]),
+        .target(name: "SaidModel", dependencies: ["SaidCore"]),
         .target(
             name: "SaidASR",
             dependencies: [
@@ -27,7 +29,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "SaidApp",
-            dependencies: ["SaidCore", "SaidCapture", "SaidASR"]
+            dependencies: ["SaidCore", "SaidCapture", "SaidASR", "SaidModel"]
         ),
         .executableTarget(
             name: "SaidModelSpike",
@@ -38,6 +40,10 @@ let package = Package(
         .testTarget(
             name: "SaidCaptureTests",
             dependencies: ["SaidCapture", "SaidCore"]
+        ),
+        .testTarget(
+            name: "SaidModelTests",
+            dependencies: ["SaidModel", "SaidCore"]
         ),
     ]
 )
