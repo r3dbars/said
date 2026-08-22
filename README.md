@@ -67,3 +67,9 @@ Read [the product requirements](docs/PRD.md) and
 Said application code is MIT licensed. Runtime and model artifacts retain their
 own licenses and notices. Public distribution is blocked until the exact pinned
 model and conversion license chain receives human review.
+
+## Contributing
+
+Pull requests run the Swift tests, privacy contract, and an ad-hoc app-package
+verification on a macOS 26 runner. The 731 MB speech model is not downloaded by
+the ordinary quality workflow; model benchmarks remain explicit hardware runs.
