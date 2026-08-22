@@ -16,8 +16,14 @@ final class AppModel: ObservableObject {
     @Published var captionTextSize: CaptionTextSize {
         didSet { defaults.set(captionTextSize.rawValue, forKey: Keys.captionTextSize) }
     }
+    @Published var captionFontStyle: CaptionFontStyle {
+        didSet { defaults.set(captionFontStyle.rawValue, forKey: Keys.captionFontStyle) }
+    }
+    @Published var captionTextColor: CaptionTextColor {
+        didSet { defaults.set(captionTextColor.rawValue, forKey: Keys.captionTextColor) }
+    }
 
-    var onResetPosition: (() -> Void)?
+    var onResetCaptionLayout: (() -> Void)?
     var onReinstallModel: (() -> Void)?
     var onRemoveModel: (() -> Void)?
     var onRevealModel: (() -> Void)?
@@ -34,12 +40,21 @@ final class AppModel: ObservableObject {
         captionTextSize = CaptionTextSize(
             rawValue: defaults.string(forKey: Keys.captionTextSize) ?? ""
         ) ?? .standard
+        captionFontStyle = CaptionFontStyle(
+            rawValue: defaults.string(forKey: Keys.captionFontStyle) ?? ""
+        ) ?? .rounded
+        captionTextColor = CaptionTextColor(
+            rawValue: defaults.string(forKey: Keys.captionTextColor) ?? ""
+        ) ?? .white
         launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
     }
 
-    func resetCaptionPosition() {
-        onResetPosition?()
+    func resetCaptionLayout() {
+        onResetCaptionLayout?()
     }
+
+    func decreaseCaptionTextSize() { captionTextSize = captionTextSize.smaller }
+    func increaseCaptionTextSize() { captionTextSize = captionTextSize.larger }
 
     func reinstallModel() { onReinstallModel?() }
     func removeModel() { onRemoveModel?() }
@@ -83,5 +98,7 @@ final class AppModel: ObservableObject {
 
     private enum Keys {
         static let captionTextSize = "captionTextSize"
+        static let captionFontStyle = "captionFontStyle"
+        static let captionTextColor = "captionTextColor"
     }
 }

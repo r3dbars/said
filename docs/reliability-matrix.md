@@ -95,7 +95,7 @@ retained in a receipt.
 | Requirement | State | Evidence | Remaining proof |
 | --- | --- | --- | --- |
 | Native menu-bar app and floating two-line panel | **Proven — current Mac** | Local alpha is playable; capture smoke reaches visible pipeline | Clean-user usability recording and multi-display/full-screen matrix |
-| Text sizes, placement, contrast/transparency/motion behavior | **Partial** | Implemented in SwiftUI/AppKit; deterministic panel-height tests | Screenshot and VoiceOver acceptance matrix |
+| Text appearance, direct placement/resizing, contrast/transparency/motion behavior | **Partial** | Implemented in SwiftUI/AppKit; deterministic size/font/color/layout tests; focused visual comparison recorded in [`design-qa.md`](../design-qa.md) | VoiceOver, multi-display, and full accessibility acceptance matrix |
 | One-action first-run setup | **Partial** | Setup/model/capture flow implemented and used on development Mac | Clean-user walkthrough without Terminal |
 | Local-alpha app and DMG verification | **Proven — local only** | `verify-release.sh`; local DMG SHA-256 `2524381508409411159ed6a8a52cb7aa9ed1e9f8b5ac1505a875d5fbafb823c0` | Ad-hoc artifacts are intentionally not distributable |
 | GitHub quality gate | **Proven** | [main run 32592562006](https://github.com/r3dbars/said/actions/runs/32592562006): tests, privacy, bootstrap, app build, package verification, model absence | Keep green for every merge |

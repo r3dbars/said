@@ -28,4 +28,20 @@ public enum CaptionTextSize: String, CaseIterable, Codable, Sendable {
         case .large: 160
         }
     }
+
+    public var smaller: Self {
+        switch self {
+        case .small: .small
+        case .standard: .small
+        case .large: .standard
+        }
+    }
+
+    public var larger: Self {
+        switch self {
+        case .small: .standard
+        case .standard: .large
+        case .large: .large
+        }
+    }
 }
