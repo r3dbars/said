@@ -19,7 +19,10 @@ release signature.
 
 The capture smoke plays a short synthetic phrase through macOS and checks only
 content-free operational logs for proof that audio reached the local caption
-pipeline. It never inspects or persists recognized text.
+pipeline. It never inspects or persists recognized text. A successful run
+writes a content-free JSON receipt under `Artifacts/Receipts/Capture/` with the
+tested commit, machine details, elapsed time, and boolean proof of the local
+Metal model and caption revision.
 
 The soak command defaults to 30 minutes. It continuously exercises local
 captioning, samples resident memory after warmup, detects pipeline failure
