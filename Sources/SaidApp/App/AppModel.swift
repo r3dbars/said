@@ -9,6 +9,7 @@ final class AppModel: ObservableObject {
     @Published var tentativeText = ""
     @Published var isPlacementMode = false
     @Published var captureState: CaptureState = .idle
+    @Published var modelState: ModelState = .checking
     @Published var audioLevel = 0.0
     @Published private(set) var launchAtLoginEnabled = false
     @Published private(set) var launchAtLoginError: String?
@@ -17,6 +18,9 @@ final class AppModel: ObservableObject {
     }
 
     var onResetPosition: (() -> Void)?
+    var onReinstallModel: (() -> Void)?
+    var onRemoveModel: (() -> Void)?
+    var onRevealModel: (() -> Void)?
 
     private let defaults: UserDefaults
 
@@ -31,6 +35,10 @@ final class AppModel: ObservableObject {
     func resetCaptionPosition() {
         onResetPosition?()
     }
+
+    func reinstallModel() { onReinstallModel?() }
+    func removeModel() { onRemoveModel?() }
+    func revealModel() { onRevealModel?() }
 
     func setLaunchAtLogin(_ enabled: Bool) {
         do {
