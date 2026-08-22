@@ -1,0 +1,11 @@
+Parakeet Unified EN 0.6B
+
+Upstream model: nvidia/parakeet-unified-en-0.6b
+GGUF conversion: handy-computer/parakeet-unified-en-0.6b-gguf
+Pinned conversion revision: 7e948f21b7bdbac698d3318db9d350f1096f3b6c
+Pinned artifact: parakeet-unified-en-0.6b-Q8_0.gguf
+
+Licensed by NVIDIA Corporation under the NVIDIA Open Model License
+
+The model weights are downloaded separately during Said setup and are not
+contained in the Said application or disk image.

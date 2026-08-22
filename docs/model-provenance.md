@@ -38,3 +38,9 @@ minimum include that license and a NOTICE containing the required NVIDIA
 attribution. Public model distribution remains blocked until this discrepancy
 and all redistribution obligations receive explicit human review. Do not ship
 a CC-BY-only notice.
+
+The repository archives NVIDIA's official October 24, 2025 Open Model License
+PDF at `Resources/Licenses/NVIDIA-Open-Model-License-2025-10-24.pdf` with
+SHA-256 `4d2fb590aa9b30c47f2058bff17291df7fa2aa0c1bd775a20703da9bb267cfab`.
+This preserves the governing text and required attribution while human review
+remains outstanding.

@@ -20,6 +20,9 @@ struct SettingsView: View {
                 }
                 Section("What is saved") {
                     Text("The speech model and your app settings. Said does not save audio or caption text.")
+                    Button("Open Complete Privacy Document") {
+                        model.openPrivacyDocument()
+                    }
                 }
             } else {
                 Section("Captions") {
@@ -57,11 +60,18 @@ struct SettingsView: View {
                         }
                     }
                 }
+                Section("About") {
+                    LabeledContent("Version", value: appVersion)
+                    HStack {
+                        Button("Open Source Licenses") { model.openLicenses() }
+                        Button("Check for Updates") { model.checkForUpdates() }
+                    }
+                }
             }
         }
         .formStyle(.grouped)
         .padding(8)
-        .frame(width: 500, height: showPrivacy ? 460 : 330)
+        .frame(width: 500, height: showPrivacy ? 480 : 420)
         .confirmationDialog(
             "Remove the local speech model?",
             isPresented: $confirmRemoval,
@@ -71,5 +81,10 @@ struct SettingsView: View {
         } message: {
             Text("Said will need to download the model again before captions can start.")
         }
+    }
+
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+            ?? "Development"
     }
 }

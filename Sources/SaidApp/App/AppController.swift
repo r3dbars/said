@@ -53,6 +53,16 @@ final class AppController {
             }
         }
         model.onRevealModel = { [weak lifecycle] in lifecycle?.revealInFinder() }
+        model.onOpenLicenses = {
+            Self.openBundledDocument(named: "THIRD_PARTY_LICENSES", fileExtension: "md")
+        }
+        model.onOpenPrivacyDocument = {
+            Self.openBundledDocument(named: "Privacy", fileExtension: "md")
+        }
+        model.onCheckForUpdates = {
+            guard let url = URL(string: "https://github.com/r3dbars/said/releases") else { return }
+            NSWorkspace.shared.open(url)
+        }
     }
 
     func start() {
@@ -64,5 +74,14 @@ final class AppController {
         audioCapture.stop()
         captionPanel.clearAndHide()
         menuBar.remove()
+    }
+
+    private static func openBundledDocument(named name: String, fileExtension: String) {
+        guard let url = Bundle.main.url(
+            forResource: name,
+            withExtension: fileExtension,
+            subdirectory: "Licenses"
+        ) else { return }
+        NSWorkspace.shared.open(url)
     }
 }

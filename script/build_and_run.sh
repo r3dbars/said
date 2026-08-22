@@ -5,26 +5,12 @@ mode=${1:-run}
 repo_root=${0:A:h:h}
 app_name=Said
 bundle_id=app.said.Said
-dist_dir="$repo_root/dist"
-app_bundle="$dist_dir/$app_name.app"
-app_contents="$app_bundle/Contents"
-app_macos="$app_contents/MacOS"
-app_frameworks="$app_contents/Frameworks"
+app_bundle="$repo_root/dist/$app_name.app"
+app_macos="$app_bundle/Contents/MacOS"
 
 pkill -x "$app_name" >/dev/null 2>&1 || true
 
-cd "$repo_root"
-swift build --product "$app_name"
-build_binary="$(swift build --show-bin-path)/$app_name"
-
-rm -rf "$app_bundle"
-mkdir -p "$app_macos" "$app_frameworks"
-cp "$build_binary" "$app_macos/$app_name"
-cp "$repo_root/Resources/Info.plist" "$app_contents/Info.plist"
-cp -R "$(swift build --show-bin-path)/CTranscribe.framework" "$app_frameworks/CTranscribe.framework"
-chmod +x "$app_macos/$app_name"
-install_name_tool -add_rpath @loader_path/../Frameworks "$app_macos/$app_name" 2>/dev/null || true
-codesign --force --deep --sign - "$app_bundle"
+"$repo_root/scripts/build-app.sh" --configuration debug --adhoc
 
 open_app() {
   /usr/bin/open -n "$app_bundle"
