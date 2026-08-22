@@ -129,8 +129,9 @@ Default placement is horizontally centered roughly 64 points above the active
 display's visible bottom. Persist normalized display-relative placement, the
 chosen display when it remains connected, and the user's caption-strip width.
 
-The panel has a fixed two-line height, default width near 760 points (440–980,
-never above about 72% of display width), 24-point horizontal and 17–20-point
+The panel has a fixed two-line height, default width near 760 points. Its five
+width states are approximately 360, 520, 760, 1000, and 1280 points, clamped to
+no more than about 90% of the active display. Use 24-point horizontal and 17–20-point
 vertical padding, and about a 20–22-point radius. Use a dark neutral native
 material, near-white text, subtle border/shadow, and an opaque high-contrast
 fallback for Reduce Transparency or Increase Contrast.
@@ -160,14 +161,18 @@ continuous pixel scrolling, or a history drawer.
 ### Move, settings, privacy
 
 Hovering visible captions makes the whole panel draggable and adds a compact
-dark control bar above—not inside—the caption surface. The bar owns text size,
-font, text color, and a click-based width stepper with XS, S, M, L, and XL
-states; it collapses shortly after
+dark control bar outside—not inside—the caption surface. Its controls form one
+left-aligned cluster. Clicking the visible point-size value cycles 14, 18, 22,
+26, 34, 44, and 56 point text. Clicking the visible XS, S, M, L, or XL value
+cycles the five width states. Font and color remain direct compact controls.
+The bar collapses shortly after
 the pointer leaves and captions return to click-through behavior. The menu-bar
 Customize Captions mode remains available during silence, shows a sample, and adds
 an explicit Done control. Width changes snap immediately, remain centered when
 space allows, persist across launches, and clamp to the product/display bounds,
-while text size controls the fixed two-line height. Settings contains caption
+while text size controls the fixed two-line height. When the panel moves into
+the upper half of its display, place the toolbar below the caption card; place
+it above the card in the lower half. Settings contains caption
 size, Reset Caption Layout, native
 launch-at-login via `SMAppService`, model storage/reinstall/reveal, version,
 licenses, privacy, support, and updates. Do not expose runtime internals.
@@ -388,6 +393,7 @@ long-run memory cannot be bounded.
 | 2026-08-22 | Put a compact appearance bar above captions during layout editing | The owner selected a dense dark-toolbar reference and requested one-click size and color plus a few font choices without adding persistent normal-mode chrome. |
 | 2026-08-22 | Add a persistent menu-bar Captions On toggle | People need an unmistakable indication of when captions should appear. Off stops capture, clears the panel, and persists across relaunches; the checkmark, status copy, and icon treatment all expose the state. |
 | 2026-08-22 | Replace freeform width dragging with XS–XL width steps | The narrow drag target was hard to acquire and produced unpredictable sizing. A bounded click control is easier to understand, accessible from hover or menu customization, and persists deterministically. |
+| 2026-08-22 | Make size labels cycle directly and flip the toolbar by vertical position | Removing arrow targets makes sizing behave like the compact reference toolbar. Keeping controls left-aligned reduces eye travel, while moving the toolbar below top-positioned captions prevents it from obstructing or being pushed off-screen. |
 
 ## Definition of done
 

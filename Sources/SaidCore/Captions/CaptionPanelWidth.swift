@@ -27,31 +27,21 @@ public enum CaptionPanelWidth: String, CaseIterable, Sendable {
 
     public var preferredWidth: Double {
         switch self {
-        case .extraSmall: 440
-        case .small: 600
+        case .extraSmall: 360
+        case .small: 520
         case .medium: 760
-        case .large: 880
-        case .extraLarge: 980
+        case .large: 1_000
+        case .extraLarge: 1_280
         }
     }
 
-    public var smaller: CaptionPanelWidth {
-        switch self {
-        case .extraSmall: .extraSmall
-        case .small: .extraSmall
-        case .medium: .small
-        case .large: .medium
-        case .extraLarge: .large
-        }
-    }
-
-    public var larger: CaptionPanelWidth {
+    public var next: CaptionPanelWidth {
         switch self {
         case .extraSmall: .small
         case .small: .medium
         case .medium: .large
         case .large: .extraLarge
-        case .extraLarge: .extraLarge
+        case .extraLarge: .extraSmall
         }
     }
 

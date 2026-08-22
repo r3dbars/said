@@ -10,8 +10,15 @@ struct CaptionView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            if model.captionControlsMode.isVisible { controlBar }
+            if model.captionControlsMode.isVisible,
+               model.captionToolbarPlacement == .above {
+                controlBar
+            }
             captionCard
+            if model.captionControlsMode.isVisible,
+               model.captionToolbarPlacement == .below {
+                controlBar
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .preferredColorScheme(.dark)
@@ -29,7 +36,7 @@ struct CaptionView: View {
             fontMenu
             Divider().frame(height: 18)
             colorControls
-            Spacer(minLength: 2)
+            Divider().frame(height: 18)
             widthControls
             if model.captionControlsMode.showsDoneButton {
                 Button("Done", action: onDone)
@@ -90,27 +97,16 @@ struct CaptionView: View {
     }
 
     private var sizeControls: some View {
-        HStack(spacing: 5) {
-            Button { model.decreaseCaptionTextSize() } label: {
-                Image(systemName: "textformat.size.smaller")
-            }
-            .disabled(model.captionTextSize == .small)
-            .help("Smaller captions")
-            .accessibilityLabel("Smaller captions")
-
-            Text("\(Int(model.captionTextSize.pointSize))")
+        Button { model.captionTextSize = model.captionTextSize.next } label: {
+            Text("\(Int(model.captionTextSize.pointSize))px")
                 .font(.caption.monospacedDigit().weight(.semibold))
-                .frame(minWidth: 22)
-                .accessibilityLabel("\(Int(model.captionTextSize.pointSize)) point captions")
-
-            Button { model.increaseCaptionTextSize() } label: {
-                Image(systemName: "textformat.size.larger")
-            }
-            .disabled(model.captionTextSize == .large)
-            .help("Larger captions")
-            .accessibilityLabel("Larger captions")
+                .frame(minWidth: 34)
         }
         .buttonStyle(.plain)
+        .help("Caption text size: \(model.captionTextSize.title). Click to change.")
+        .accessibilityLabel("Caption text size")
+        .accessibilityValue("\(Int(model.captionTextSize.pointSize)) points")
+        .accessibilityHint("Cycles through 14, 18, 22, 26, 34, 44, and 56 points")
     }
 
     private var fontMenu: some View {
@@ -154,33 +150,19 @@ struct CaptionView: View {
     }
 
     private var widthControls: some View {
-        HStack(spacing: 5) {
-            Button { model.captionPanelWidth = model.captionPanelWidth.smaller } label: {
-                Image(systemName: "chevron.left")
-            }
-            .disabled(model.captionPanelWidth == .extraSmall)
-            .help("Narrower caption window")
-            .accessibilityLabel("Narrower caption window")
-
+        Button { model.captionPanelWidth = model.captionPanelWidth.next } label: {
             Text(model.captionPanelWidth.title)
                 .font(.caption.monospaced().weight(.bold))
-                .frame(minWidth: 20)
-                .accessibilityHidden(true)
-
-            Button { model.captionPanelWidth = model.captionPanelWidth.larger } label: {
-                Image(systemName: "chevron.right")
-            }
-            .disabled(model.captionPanelWidth == .extraLarge)
-            .help("Wider caption window")
-            .accessibilityLabel("Wider caption window")
+                .frame(minWidth: 24)
+                .padding(.horizontal, 5)
+                .frame(height: 26)
+                .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 7)
-        .frame(height: 26)
-        .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
-        .accessibilityElement(children: .contain)
+        .help("Caption window: \(model.captionPanelWidth.accessibilityTitle). Click to change.")
         .accessibilityLabel("Caption window width")
         .accessibilityValue(model.captionPanelWidth.accessibilityTitle)
+        .accessibilityHint("Cycles through Extra Small, Small, Medium, Large, and Extra Large")
     }
 
     @ViewBuilder

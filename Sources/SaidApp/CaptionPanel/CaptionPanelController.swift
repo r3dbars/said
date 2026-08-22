@@ -4,7 +4,7 @@ import SaidCore
 import SwiftUI
 
 @MainActor
-final class CaptionPanelController {
+final class CaptionPanelController: NSObject, NSWindowDelegate {
     var onPlacementFinished: (() -> Void)?
 
     private let model: AppModel
@@ -29,6 +29,7 @@ final class CaptionPanelController {
             backing: .buffered,
             defer: false
         )
+        super.init()
         configurePanel()
         installContent()
         restoreLayout()
@@ -167,6 +168,7 @@ final class CaptionPanelController {
             model.captionTextSize.panelHeight
                 + CaptionPanelLayout.editingToolbarExtraHeight
         )
+        updateToolbarPlacement()
         panel.alphaValue = 1
         panel.ignoresMouseEvents = false
         panel.isMovableByWindowBackground = true
@@ -214,6 +216,7 @@ final class CaptionPanelController {
         if let screen = panel.screen ?? activeScreen() {
             constrainPanel(to: screen.visibleFrame)
         }
+        updateToolbarPlacement()
         panel.orderFrontRegardless()
     }
 
@@ -279,6 +282,7 @@ final class CaptionPanelController {
         panel.ignoresMouseEvents = true
         panel.isReleasedWhenClosed = false
         panel.animationBehavior = .none
+        panel.delegate = self
     }
 
     private func installContent() {
@@ -343,6 +347,7 @@ final class CaptionPanelController {
             ? CaptionPanelLayout.editingToolbarExtraHeight
             : 0
         setPanelHeight(size.panelHeight + editingHeight)
+        updateToolbarPlacement()
     }
 
     private func setPanelHeight(_ height: Double) {
@@ -376,6 +381,20 @@ final class CaptionPanelController {
         CaptionPanelLayout.clampedWidth(
             choice.preferredWidth,
             visibleScreenWidth: screen.visibleFrame.width
+        )
+    }
+
+    func windowDidMove(_ notification: Notification) {
+        updateToolbarPlacement()
+    }
+
+    private func updateToolbarPlacement() {
+        guard model.captionControlsMode.isVisible,
+              let screen = panel.screen ?? activeScreen()
+        else { return }
+        model.captionToolbarPlacement = .forVerticalPosition(
+            panelMidY: panel.frame.midY,
+            displayMidY: screen.visibleFrame.midY
         )
     }
 

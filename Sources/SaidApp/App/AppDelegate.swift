@@ -6,10 +6,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appController: AppController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+        let isVisualPreview = ProcessInfo.processInfo.arguments.contains {
+            $0.hasPrefix("--preview-")
+        }
+        NSApp.setActivationPolicy(isVisualPreview ? .regular : .accessory)
         let controller = AppController(model: appModel)
         appController = controller
         controller.start()
+        if isVisualPreview { NSApp.activate(ignoringOtherApps: true) }
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

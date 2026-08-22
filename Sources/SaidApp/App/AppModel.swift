@@ -8,6 +8,7 @@ import ServiceManagement
 final class AppModel: ObservableObject {
     @Published var captionWindow = CaptionWindow.empty
     @Published var captionControlsMode = CaptionControlsMode.hidden
+    @Published var captionToolbarPlacement = CaptionToolbarPlacement.above
     @Published var captureState: CaptureState = .idle
     @Published var modelState: ModelState = .checking
     @Published private(set) var captionsEnabled: Bool {
