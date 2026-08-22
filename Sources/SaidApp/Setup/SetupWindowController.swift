@@ -27,4 +27,8 @@ final class SetupWindowController: NSWindowController {
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
     }
+
+    func hide() {
+        window?.orderOut(nil)
+    }
 }
