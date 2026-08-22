@@ -27,6 +27,17 @@ final class SaidStatusTextTests: XCTestCase {
         )
     }
 
+    func testDisabledCaptionsExposeOffStateRegardlessOfPipelineState() {
+        XCTAssertEqual(
+            SaidStatusText.title(
+                model: .downloading(receivedBytes: 10, totalBytes: 100),
+                capture: .preparing,
+                captionsEnabled: false
+            ),
+            "Captions are off"
+        )
+    }
+
     func testOnlyActiveCaptureStatesResumeAfterSystemWake() {
         XCTAssertTrue(CaptureState.preparing.shouldResumeAfterSystemWake)
         XCTAssertTrue(CaptureState.starting.shouldResumeAfterSystemWake)

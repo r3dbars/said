@@ -1,5 +1,10 @@
 public enum SaidStatusText {
-    public static func title(model: ModelState, capture: CaptureState) -> String {
+    public static func title(
+        model: ModelState,
+        capture: CaptureState,
+        captionsEnabled: Bool = true
+    ) -> String {
+        guard captionsEnabled else { return "Captions are off" }
         switch model {
         case .checking:
             return "Checking speech model…"
