@@ -24,6 +24,12 @@ writes a content-free JSON receipt under `Artifacts/Receipts/Capture/` with the
 tested commit, machine details, elapsed time, and boolean proof of the local
 Metal model and caption revision.
 
+The privacy smoke enforces the static permission, prohibited-API, dependency,
+logging, app-storage, binary-string, and caption-path network boundaries. It
+writes a content-free JSON receipt under `Artifacts/Receipts/Privacy/` and
+marks runtime network observation as unperformed so a static pass cannot be
+mistaken for the remaining live offline-network gate.
+
 The soak command defaults to 30 minutes. It continuously exercises local
 captioning, samples resident memory after warmup, detects pipeline failure
 signatures, and writes a content-free JSON receipt under
