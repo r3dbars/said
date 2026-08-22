@@ -26,3 +26,15 @@ decision is required if any locked assumption fails; no fallback may be added.
 
 The PR 0 executable is an intentionally temporary product named
 `SaidModelSpike`, not the shipping app.
+
+## Capture lifecycle invariants
+
+- Starting the Core Audio tap is not sufficient proof of capture. Said remains
+  in its starting state until the first owned, nonempty PCM buffer arrives.
+- Startup fails visibly after a bounded five-second first-buffer timeout.
+- A superseded startup cannot overwrite a later stop with a failure state.
+- If captions were active when macOS announces sleep, Said tears down capture
+  and recognition before sleep and restarts once after wake using the already
+  verified model. Idle and failed sessions remain stopped.
+- The running capture watchdog still permits only one bounded reconstruction
+  after a proven stream stalls.

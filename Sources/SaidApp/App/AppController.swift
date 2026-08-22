@@ -9,6 +9,10 @@ final class AppController {
     private let setupWindow: SetupWindowController
     private let settingsWindow: SettingsWindowController
     private let menuBar: MenuBarController
+    private var workspaceObservers: [NSObjectProtocol] = []
+    private var activeModelURL: URL?
+    private var shouldResumeAfterWake = false
+    private var sleepStopTask: Task<Void, Never>?
 
     init(model: AppModel) {
         self.model = model
@@ -27,7 +31,10 @@ final class AppController {
         settingsWindow = SettingsWindowController(model: model)
         menuBar = MenuBarController(model: model)
 
-        lifecycle.onReady = { [weak capture] url in capture?.start(modelURL: url) }
+        lifecycle.onReady = { [weak self, weak capture] url in
+            self?.activeModelURL = url
+            capture?.start(modelURL: url)
+        }
         lifecycle.onNeedsSetup = { [weak setup] in setup?.show() }
         capture.onCaption = { [weak panel] snapshot in panel?.show(snapshot) }
         capture.onCaptionReset = { [weak panel] in panel?.clearAndHide() }
@@ -72,6 +79,7 @@ final class AppController {
             ) else { return }
             NSWorkspace.shared.open(url)
         }
+        installWorkspaceObservers()
     }
 
     func start() {
@@ -80,9 +88,64 @@ final class AppController {
     }
 
     func stop() {
+        shouldResumeAfterWake = false
+        sleepStopTask?.cancel()
+        sleepStopTask = nil
+        removeWorkspaceObservers()
         audioCapture.stop()
         captionPanel.clearAndHide()
         menuBar.remove()
+    }
+
+    private func installWorkspaceObservers() {
+        let notifications = NSWorkspace.shared.notificationCenter
+        workspaceObservers.append(
+            notifications.addObserver(
+                forName: NSWorkspace.willSleepNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in self?.prepareForSystemSleep() }
+            }
+        )
+        workspaceObservers.append(
+            notifications.addObserver(
+                forName: NSWorkspace.didWakeNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in self?.resumeAfterSystemWake() }
+            }
+        )
+    }
+
+    private func removeWorkspaceObservers() {
+        let notifications = NSWorkspace.shared.notificationCenter
+        workspaceObservers.forEach(notifications.removeObserver)
+        workspaceObservers.removeAll()
+    }
+
+    private func prepareForSystemSleep() {
+        guard model.captureState.shouldResumeAfterSystemWake else { return }
+        shouldResumeAfterWake = true
+        SaidLogger.capture.info("Stopping caption pipeline for system sleep")
+        sleepStopTask?.cancel()
+        sleepStopTask = Task { [weak audioCapture] in
+            await audioCapture?.stopAndWait()
+        }
+    }
+
+    private func resumeAfterSystemWake() {
+        guard shouldResumeAfterWake, let modelURL = activeModelURL else { return }
+        shouldResumeAfterWake = false
+        let pendingStop = sleepStopTask
+        sleepStopTask = nil
+        Task { [weak self, weak audioCapture] in
+            await pendingStop?.value
+            guard let self, self.model.modelState == .ready else { return }
+            SaidLogger.capture.info("Restarting caption pipeline after system wake")
+            audioCapture?.start(modelURL: modelURL)
+        }
     }
 
     private static func openBundledDocument(named name: String, fileExtension: String) {

@@ -28,6 +28,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
 
     private static let stallSeconds = 4.0
     private static let maximumRecoveryAttempts = 1
+    private static let firstBufferTimeout: Duration = .seconds(5)
 
     public init() {}
 
@@ -47,6 +48,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
 
         do {
             try setupAndStart(generation: captureGeneration)
+            try await waitForFirstBuffer(generation: captureGeneration)
             let valid = lock.withLock {
                 guard generation == captureGeneration else { return false }
                 internalState = .capturing
@@ -55,6 +57,8 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             guard valid else { throw CancellationError() }
             startWatchdog(generation: captureGeneration)
         } catch {
+            let isCurrentGeneration = lock.withLock { generation == captureGeneration }
+            guard isCurrentGeneration else { throw CancellationError() }
             teardownResources()
             let failure = classify(error)
             lock.withLock {
@@ -62,6 +66,20 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             }
             throw failure
         }
+    }
+
+    private func waitForFirstBuffer(generation captureGeneration: UInt64) async throws {
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: Self.firstBufferTimeout)
+        while clock.now < deadline {
+            let proof = lock.withLock { () -> (isCurrent: Bool, received: Bool) in
+                (generation == captureGeneration, receivedFirstBuffer)
+            }
+            guard proof.isCurrent else { throw CancellationError() }
+            if proof.received { return }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        throw CaptureFailure.startTimedOut
     }
 
     public func stop() async {
