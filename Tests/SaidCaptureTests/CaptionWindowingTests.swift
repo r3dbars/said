@@ -17,6 +17,23 @@ final class CaptionWindowingTests: XCTestCase {
         )
     }
 
+    func testCaptionPanelWidthChoicesAreOrderedBoundedAndMigratable() {
+        XCTAssertEqual(
+            CaptionPanelWidth.allCases.map(\.title),
+            ["XS", "S", "M", "L", "XL"]
+        )
+        XCTAssertEqual(
+            CaptionPanelWidth.allCases.map(\.preferredWidth),
+            [440, 600, 760, 880, 980]
+        )
+        XCTAssertEqual(CaptionPanelWidth.extraSmall.smaller, .extraSmall)
+        XCTAssertEqual(CaptionPanelWidth.medium.smaller, .small)
+        XCTAssertEqual(CaptionPanelWidth.medium.larger, .large)
+        XCTAssertEqual(CaptionPanelWidth.extraLarge.larger, .extraLarge)
+        XCTAssertEqual(CaptionPanelWidth.nearest(to: 745), .medium)
+        XCTAssertEqual(CaptionPanelWidth.nearest(to: 965), .extraLarge)
+    }
+
     func testCaptionRowCapacityTracksWidthAndTextSize() {
         XCTAssertEqual(
             CaptionPanelLayout.wordsPerLine(width: 760, textSize: .standard),

@@ -14,15 +14,15 @@ final class CaptionPanelController {
     private var hoverDismissTask: Task<Void, Never>?
     private var hoverCancellable: AnyCancellable?
     private var textSizeCancellable: AnyCancellable?
-    private var resizeStartWidth: CGFloat?
+    private var panelWidthCancellable: AnyCancellable?
     private var visibilityEpoch = 0
 
     init(model: AppModel) {
         self.model = model
-        let storedWidth = defaults.object(forKey: Keys.width) == nil
-            ? CaptionPanelLayout.defaultWidth
-            : defaults.double(forKey: Keys.width)
-        let initialSize = Self.panelSize(for: model.captionTextSize, width: storedWidth)
+        let initialSize = Self.panelSize(
+            for: model.captionTextSize,
+            width: model.captionPanelWidth.preferredWidth
+        )
         panel = NSPanel(
             contentRect: NSRect(origin: .zero, size: initialSize),
             styleMask: [.borderless, .nonactivatingPanel],
@@ -33,6 +33,7 @@ final class CaptionPanelController {
         installContent()
         restoreLayout()
         observeTextSize()
+        observePanelWidth()
     }
 
     func showPreview() {
@@ -175,7 +176,7 @@ final class CaptionPanelController {
     }
 
     private func scheduleHoverDismiss() {
-        guard hoverDismissTask == nil, resizeStartWidth == nil else { return }
+        guard hoverDismissTask == nil else { return }
         hoverDismissTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(450))
             guard !Task.isCancelled, let self else { return }
@@ -191,7 +192,6 @@ final class CaptionPanelController {
         guard model.captionControlsMode == .hover else { return }
         hoverDismissTask?.cancel()
         hoverDismissTask = nil
-        finishResize()
         model.captionControlsMode = .hidden
         setPanelHeight(model.captionTextSize.panelHeight)
         saveLayout()
@@ -205,7 +205,7 @@ final class CaptionPanelController {
         stopHoverMonitoring()
         visibilityEpoch += 1
         model.captionWindow = CaptionWindow(lines: [
-            CaptionLine(id: 0, committed: "Move and resize captions.", tentative: ""),
+            CaptionLine(id: 0, committed: "Move and size captions.", tentative: ""),
         ])
         model.captionControlsMode = .placement
         setPanelHeight(model.captionTextSize.panelHeight + CaptionPanelLayout.editingToolbarExtraHeight)
@@ -219,7 +219,6 @@ final class CaptionPanelController {
 
     func endPlacement() {
         visibilityEpoch += 1
-        finishResize()
         model.captionControlsMode = .hidden
         setPanelHeight(model.captionTextSize.panelHeight)
         saveLayout()
@@ -232,42 +231,27 @@ final class CaptionPanelController {
     func resetLayout() {
         defaults.removeObject(forKey: Keys.positionX)
         defaults.removeObject(forKey: Keys.positionY)
-        defaults.removeObject(forKey: Keys.width)
+        defaults.removeObject(forKey: Keys.legacyWidth)
         defaults.removeObject(forKey: Keys.screenIdentifier)
         guard let screen = activeScreen() else { return }
-        let width = CaptionPanelLayout.clampedWidth(
-            CaptionPanelLayout.defaultWidth,
-            visibleScreenWidth: screen.visibleFrame.width
-        )
+        model.captionPanelWidth = .medium
+        let width = resolvedWidth(for: .medium, on: screen)
         panel.setContentSize(Self.panelSize(for: model.captionTextSize, width: width))
         placeAtDefaultPosition()
     }
 
-    func resizePanel(horizontalTranslation: CGFloat) {
-        guard model.captionControlsMode.isVisible,
-              let screen = panel.screen ?? activeScreen()
-        else { return }
-        if resizeStartWidth == nil { resizeStartWidth = panel.frame.width }
-        hoverDismissTask?.cancel()
-        hoverDismissTask = nil
-        guard let resizeStartWidth else { return }
-
-        let width = CaptionPanelLayout.clampedWidth(
-            resizeStartWidth + horizontalTranslation,
-            visibleScreenWidth: screen.visibleFrame.width
-        )
+    private func setPanelWidth(_ choice: CaptionPanelWidth) {
+        guard let screen = panel.screen ?? activeScreen() else { return }
+        let width = resolvedWidth(for: choice, on: screen)
         var frame = panel.frame
+        let centerX = frame.midX
         frame.size.width = width
-        if frame.maxX > screen.visibleFrame.maxX {
-            frame.origin.x = screen.visibleFrame.maxX - width
-        }
-        frame.origin.x = max(screen.visibleFrame.minX, frame.origin.x)
+        frame.origin.x = centerX - width / 2
+        frame.origin.x = min(
+            max(frame.origin.x, screen.visibleFrame.minX),
+            screen.visibleFrame.maxX - width
+        )
         panel.setFrame(frame, display: true)
-    }
-
-    func finishResize() {
-        guard resizeStartWidth != nil else { return }
-        resizeStartWidth = nil
         saveLayout()
     }
 
@@ -275,7 +259,6 @@ final class CaptionPanelController {
         visibilityTask?.cancel()
         stopHoverMonitoring()
         visibilityEpoch += 1
-        resizeStartWidth = nil
         model.captionWindow = .empty
         model.captionControlsMode = .hidden
         setPanelHeight(model.captionTextSize.panelHeight)
@@ -301,11 +284,7 @@ final class CaptionPanelController {
     private func installContent() {
         let view = CaptionView(
             model: model,
-            onDone: { [weak self] in self?.onPlacementFinished?() },
-            onResize: { [weak self] translation in
-                self?.resizePanel(horizontalTranslation: translation)
-            },
-            onResizeEnded: { [weak self] in self?.finishResize() }
+            onDone: { [weak self] in self?.onPlacementFinished?() }
         )
         panel.contentView = NSHostingView(rootView: view)
     }
@@ -327,13 +306,7 @@ final class CaptionPanelController {
 
     private func restoreLayout() {
         guard let screen = savedScreen() ?? activeScreen() else { return }
-        let requestedWidth = defaults.object(forKey: Keys.width) == nil
-            ? CaptionPanelLayout.defaultWidth
-            : defaults.double(forKey: Keys.width)
-        let width = CaptionPanelLayout.clampedWidth(
-            requestedWidth,
-            visibleScreenWidth: screen.visibleFrame.width
-        )
+        let width = resolvedWidth(for: model.captionPanelWidth, on: screen)
         panel.setContentSize(Self.panelSize(for: model.captionTextSize, width: width))
 
         guard defaults.object(forKey: Keys.positionX) != nil,
@@ -357,6 +330,12 @@ final class CaptionPanelController {
         textSizeCancellable = model.$captionTextSize
             .dropFirst()
             .sink { [weak self] size in self?.resizePanel(for: size) }
+    }
+
+    private func observePanelWidth() {
+        panelWidthCancellable = model.$captionPanelWidth
+            .dropFirst()
+            .sink { [weak self] width in self?.setPanelWidth(width) }
     }
 
     private func resizePanel(for size: CaptionTextSize) {
@@ -388,10 +367,16 @@ final class CaptionPanelController {
         )
         defaults.set(normalized.x, forKey: Keys.positionX)
         defaults.set(normalized.y, forKey: Keys.positionY)
-        defaults.set(panel.frame.width, forKey: Keys.width)
         if let identifier = screenIdentifier(for: screen) {
             defaults.set(identifier, forKey: Keys.screenIdentifier)
         }
+    }
+
+    private func resolvedWidth(for choice: CaptionPanelWidth, on screen: NSScreen) -> Double {
+        CaptionPanelLayout.clampedWidth(
+            choice.preferredWidth,
+            visibleScreenWidth: screen.visibleFrame.width
+        )
     }
 
     private func constrainPanel(to visibleFrame: NSRect) {
@@ -414,7 +399,7 @@ final class CaptionPanelController {
     private enum Keys {
         static let positionX = "captionPositionX"
         static let positionY = "captionPositionY"
-        static let width = "captionWidth"
+        static let legacyWidth = "captionWidth"
         static let screenIdentifier = "captionScreenIdentifier"
     }
 }

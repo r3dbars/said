@@ -161,10 +161,12 @@ continuous pixel scrolling, or a history drawer.
 
 Hovering visible captions makes the whole panel draggable and adds a compact
 dark control bar above—not inside—the caption surface. The bar owns text size,
-font, text color, and one horizontal Resize handle; it collapses shortly after
+font, text color, and a click-based width stepper with XS, S, M, L, and XL
+states; it collapses shortly after
 the pointer leaves and captions return to click-through behavior. The menu-bar
 Customize Captions mode remains available during silence, shows a sample, and adds
-an explicit Done control. Width is clamped to the product/display bounds above,
+an explicit Done control. Width changes snap immediately, remain centered when
+space allows, persist across launches, and clamp to the product/display bounds,
 while text size controls the fixed two-line height. Settings contains caption
 size, Reset Caption Layout, native
 launch-at-login via `SMAppService`, model storage/reinstall/reveal, version,
@@ -385,6 +387,7 @@ long-run memory cannot be bounded.
 | 2026-08-22 | Hover visible captions to adjust them; retain explicit menu placement | Hover removes unnecessary menu-bar friction while delayed collapse restores normal click-through behavior. The menu action remains the dependable path during silence and shows an explicit Done affordance. |
 | 2026-08-22 | Put a compact appearance bar above captions during layout editing | The owner selected a dense dark-toolbar reference and requested one-click size and color plus a few font choices without adding persistent normal-mode chrome. |
 | 2026-08-22 | Add a persistent menu-bar Captions On toggle | People need an unmistakable indication of when captions should appear. Off stops capture, clears the panel, and persists across relaunches; the checkmark, status copy, and icon treatment all expose the state. |
+| 2026-08-22 | Replace freeform width dragging with XS–XL width steps | The narrow drag target was hard to acquire and produced unpredictable sizing. A bounded click control is easier to understand, accessible from hover or menu customization, and persists deterministically. |
 
 ## Definition of done
 

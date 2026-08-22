@@ -33,7 +33,7 @@
 
 Said lives in the menu bar, stays above full-screen apps, never steals keyboard focus, and hides itself when there is nothing useful to read. Captions grow along the lower row, then advance upward one complete row at a time, so your eyes always have a stable place to return to while tentative words settle softly.
 
-Hover over visible captions to reveal a compact control bar directly above them. It gives you one-click text sizing, Rounded/Sans/Serif choices, White/Warm Yellow/Cyan text, and a horizontal Resize handle; you can also drag the strip itself. Move away and the controls collapse back to click-through captions. **Customize Captions…** keeps those controls available during silence. The checked **Captions On** menu item, status copy, and filled menu-bar icon make it clear when Said is listening; switching it off stops capture and clears the ephemeral caption surface.
+Hover over visible captions to reveal a compact control bar directly above them. It gives you one-click text sizing, Rounded/Sans/Serif choices, White/Warm Yellow/Cyan text, and five predictable caption widths from XS through XL; you can also drag the strip itself. Move away and the controls collapse back to click-through captions. **Customize Captions…** keeps those controls available during silence. The checked **Captions On** menu item, status copy, and filled menu-bar icon make it clear when Said is listening; switching it off stops capture and clears the ephemeral caption surface.
 
 ## Why Said
 
@@ -144,7 +144,7 @@ Current evidence on the development Mac:
 
 - Real system audio reaches the local Parakeet caption pipeline.
 - Metal model loading and true streaming are proven.
-- 39 deterministic tests and the static privacy gate pass.
+- 40 deterministic tests and the static privacy gate pass.
 - Caption state, PCM queues, capture recovery, model verification, and resumable downloads have regression coverage.
 - GitHub Actions builds and verifies an arm64 local app bundle without bundling the speech model.
 

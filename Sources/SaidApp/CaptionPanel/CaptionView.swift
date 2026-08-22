@@ -5,8 +5,6 @@ import SwiftUI
 struct CaptionView: View {
     @ObservedObject var model: AppModel
     let onDone: () -> Void
-    let onResize: (CGFloat) -> Void
-    let onResizeEnded: () -> Void
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
 
@@ -32,7 +30,7 @@ struct CaptionView: View {
             Divider().frame(height: 18)
             colorControls
             Spacer(minLength: 2)
-            resizeHandle
+            widthControls
             if model.captionControlsMode.showsDoneButton {
                 Button("Done", action: onDone)
                     .buttonStyle(.borderedProminent)
@@ -155,27 +153,34 @@ struct CaptionView: View {
         }
     }
 
-    private var resizeHandle: some View {
-        Image(systemName: "arrow.left.and.right")
-            .font(.caption.weight(.semibold))
-            .frame(width: 28, height: 26)
-            .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { onResize($0.translation.width) }
-                    .onEnded { _ in onResizeEnded() }
-            )
-            .onHover { hovering in
-                if hovering {
-                    NSCursor.resizeLeftRight.set()
-                } else {
-                    NSCursor.arrow.set()
-                }
+    private var widthControls: some View {
+        HStack(spacing: 5) {
+            Button { model.captionPanelWidth = model.captionPanelWidth.smaller } label: {
+                Image(systemName: "chevron.left")
             }
-            .help("Drag left or right to resize captions")
-            .accessibilityLabel("Resize captions")
-            .accessibilityHint("Drag left or right")
+            .disabled(model.captionPanelWidth == .extraSmall)
+            .help("Narrower caption window")
+            .accessibilityLabel("Narrower caption window")
+
+            Text(model.captionPanelWidth.title)
+                .font(.caption.monospaced().weight(.bold))
+                .frame(minWidth: 20)
+                .accessibilityHidden(true)
+
+            Button { model.captionPanelWidth = model.captionPanelWidth.larger } label: {
+                Image(systemName: "chevron.right")
+            }
+            .disabled(model.captionPanelWidth == .extraLarge)
+            .help("Wider caption window")
+            .accessibilityLabel("Wider caption window")
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 7)
+        .frame(height: 26)
+        .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Caption window width")
+        .accessibilityValue(model.captionPanelWidth.accessibilityTitle)
     }
 
     @ViewBuilder
