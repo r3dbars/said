@@ -29,8 +29,14 @@ final class CaptionPanelController {
     }
 
     func showPreview() {
-        model.committedText = "Live captions for anything your Mac plays."
-        model.tentativeText = " Nothing is uploaded."
+        model.captionWindow = CaptionWindow(lines: [
+            CaptionLine(
+                id: 0,
+                committed: "Live captions for anything your Mac plays.",
+                tentative: ""
+            ),
+            CaptionLine(id: 1, committed: "", tentative: "Nothing is uploaded."),
+        ])
         model.isPlacementMode = false
         panel.ignoresMouseEvents = true
         panel.isMovableByWindowBackground = false
@@ -47,13 +53,11 @@ final class CaptionPanelController {
     }
 
     func show(_ snapshot: ASRTextSnapshot) {
-        let window = CaptionWindowing.latest(
+        model.captionWindow = CaptionWindowing.rolling(
             committed: snapshot.committed,
             tentative: snapshot.tentative,
-            wordLimit: visibleWordLimit
+            wordsPerLine: wordsPerLine
         )
-        model.committedText = window.committed
-        model.tentativeText = window.tentative
         model.isPlacementMode = false
         panel.ignoresMouseEvents = true
         panel.orderFrontRegardless()
@@ -75,17 +79,18 @@ final class CaptionPanelController {
         }
     }
 
-    private var visibleWordLimit: Int {
+    private var wordsPerLine: Int {
         switch model.captionTextSize {
-        case .small: 18
-        case .standard: 14
-        case .large: 10
+        case .small: 9
+        case .standard: 7
+        case .large: 5
         }
     }
 
     func beginPlacement() {
-        model.committedText = "Drag captions where you want them."
-        model.tentativeText = ""
+        model.captionWindow = CaptionWindow(lines: [
+            CaptionLine(id: 0, committed: "Drag captions where you want them.", tentative: ""),
+        ])
         model.isPlacementMode = true
         panel.ignoresMouseEvents = false
         panel.isMovableByWindowBackground = true
@@ -108,8 +113,7 @@ final class CaptionPanelController {
 
     func clearAndHide() {
         visibilityTask?.cancel()
-        model.committedText = ""
-        model.tentativeText = ""
+        model.captionWindow = .empty
         model.isPlacementMode = false
         panel.orderOut(nil)
     }

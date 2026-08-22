@@ -134,9 +134,12 @@ colored hypotheses, springs, or per-character animation.
 Show on first text. Hold 1.8 seconds after final revision, then fade over about
 180 ms; cancel a fade immediately when new text arrives. Respect Reduce Motion.
 
-Window visible text to roughly the newest 22–28 words, preferring a sentence
-boundary, and use a leading ellipsis only when useful. Never add scrolling or a
-history drawer.
+Pack caption words forward into two explicit, stable one-line rows. The active
+row grows along the bottom. When the next row begins, the completed lower row
+advances upward as one unit instead of reflowing on every new word. Keep only
+the newest two rows, tune row capacity for each text size, and use a leading
+ellipsis only when an older row has been discarded. Never add marquee motion,
+continuous pixel scrolling, or a history drawer.
 
 ### Move, settings, privacy
 
@@ -356,6 +359,7 @@ long-run memory cannot be bounded.
 | Date | Decision | Reason |
 | --- | --- | --- |
 | 2026-08-22 | Proceed with a local alpha on the available M5 Max | The virtual M1 run proved correctness and memory safety but its three-core paravirtual environment is not representative of physical-M1 real-time performance. A physical M1/16 GB receipt remains a public-release gate. |
+| 2026-08-22 | Roll captions in stable whole-line steps | A moving suffix caused the upper line to rewrap under the reader's eyes. The lower row now grows in place and advances upward only when a new row begins. |
 
 ## Definition of done
 

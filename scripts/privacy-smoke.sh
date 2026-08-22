@@ -46,7 +46,7 @@ fi
 
 # Caption values may be measured by length, but must never be interpolated as
 # content into SaidLogger calls.
-if rg -UP 'SaidLogger\.[a-z]+\((?:(?!\)\n).)*(snapshot\.(committed|tentative)(?!\.count)|model\.(committedText|tentativeText))' \
+if rg -UP 'SaidLogger\.[a-z]+\((?:(?!\)\n).)*(snapshot\.(committed|tentative)(?!\.count)|model\.(captionWindow|visibleCaptionText))' \
   "$repo_root/Sources/SaidApp"; then
   fail "caption content can reach a logger call"
 fi
