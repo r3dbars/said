@@ -2,8 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleExecutable</key>
-    <string>Said</string>
+	<key>CFBundleExecutable</key>
+	<string>Said</string>
+	<key>CFBundleIconFile</key>
+	<string>Said.icns</string>
     <key>CFBundleIdentifier</key>
     <string>app.said.Said</string>
     <key>CFBundleName</key>
