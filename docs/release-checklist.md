@@ -1,5 +1,10 @@
 # Release checklist
 
+See the evidence-backed [reliability and privacy verification matrix](reliability-matrix.md)
+for the current status of every deterministic, live-hardware, privacy,
+performance, and distribution gate. This checklist describes the commands; the
+matrix records what they have actually proven.
+
 ## Local development receipt
 
 ```bash
