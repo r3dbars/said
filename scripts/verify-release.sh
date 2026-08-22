@@ -52,6 +52,8 @@ fi
 [[ -f "$app/Contents/Resources/Licenses/THIRD_PARTY_LICENSES.md" ]] || { print -u2 "missing third-party notices"; exit 1; }
 [[ -f "$app/Contents/Resources/Licenses/Privacy.md" ]] || { print -u2 "missing privacy document"; exit 1; }
 [[ -f "$app/Contents/Resources/Licenses/NVIDIA-Open-Model-License-2025-10-24.pdf" ]] || { print -u2 "missing NVIDIA model license"; exit 1; }
+[[ -f "$app/Contents/Resources/Said.icns" ]] || { print -u2 "missing Said app icon"; exit 1; }
+[[ $(plutil -extract CFBundleIconFile raw "$app/Contents/Info.plist") == Said.icns ]] || { print -u2 "invalid Said app icon declaration"; exit 1; }
 bundled_model=$(find "$app" -type f -iname '*.gguf' -print -quit)
 [[ -z "$bundled_model" ]] || { print -u2 "model must not be bundled: $bundled_model"; exit 1; }
 
