@@ -2,12 +2,17 @@
 set -euo pipefail
 
 allow_adhoc=false
+allow_development=false
 artifact=""
 
 while (( $# > 0 )); do
   case "$1" in
     --allow-adhoc)
       allow_adhoc=true
+      shift
+      ;;
+    --allow-development)
+      allow_development=true
       shift
       ;;
     *)
@@ -18,7 +23,7 @@ while (( $# > 0 )); do
 done
 
 [[ -n "$artifact" ]] || {
-  print -u2 "usage: $0 [--allow-adhoc] <Said.app|Said.dmg>"
+  print -u2 "usage: $0 [--allow-adhoc | --allow-development] <Said.app|Said.dmg>"
   exit 2
 }
 artifact=${artifact:A}
@@ -79,8 +84,14 @@ if [[ "$details" == *"Signature=adhoc"* ]]; then
   exit 0
 fi
 
-[[ "$details" == *"Authority=Developer ID Application:"* ]] || { print -u2 "missing Developer ID Application signature"; exit 1; }
 [[ "$details" == *"runtime"* ]] || { print -u2 "Hardened Runtime is not enabled"; exit 1; }
+if [[ "$details" == *"Authority=Apple Development:"* ]]; then
+  [[ "$allow_development" == true ]] || { print -u2 "release artifact has a local Apple Development signature"; exit 1; }
+  print "local development verification passed (stable Apple Development signature; not distributable)"
+  exit 0
+fi
+
+[[ "$details" == *"Authority=Developer ID Application:"* ]] || { print -u2 "missing Developer ID Application signature"; exit 1; }
 spctl -a -vv --type execute "$app"
 if [[ "$artifact" == *.dmg ]]; then
   codesign --verify --verbose=2 "$artifact"

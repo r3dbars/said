@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root=${0:A:h:h}
 verify=false
+local_identity=${SAID_LOCAL_SIGNING_IDENTITY:-}
 
 while (( $# > 0 )); do
   case "$1" in
@@ -17,9 +18,28 @@ while (( $# > 0 )); do
   esac
 done
 
-"$repo_root/scripts/build-app.sh" --configuration release --adhoc
-if [[ "$verify" == true ]]; then
-  "$repo_root/scripts/verify-release.sh" --allow-adhoc "$repo_root/dist/Said.app"
+if [[ -z "$local_identity" ]]; then
+  local_identity=$(security find-identity -p codesigning -v 2>/dev/null \
+    | sed -n 's/.*"\(Apple Development:[^"]*\)".*/\1/p' \
+    | head -n 1)
+fi
+
+if [[ -n "$local_identity" ]]; then
+  "$repo_root/scripts/build-app.sh" \
+    --configuration release \
+    --signing-identity "$local_identity"
+  if [[ "$verify" == true ]]; then
+    "$repo_root/scripts/verify-release.sh" \
+      --allow-development \
+      "$repo_root/dist/Said.app"
+  fi
+  print "Signed with stable local identity: $local_identity"
+else
+  "$repo_root/scripts/build-app.sh" --configuration release --adhoc
+  if [[ "$verify" == true ]]; then
+    "$repo_root/scripts/verify-release.sh" --allow-adhoc "$repo_root/dist/Said.app"
+  fi
+  print "No Apple Development identity found; used an ad-hoc local signature."
 fi
 
 /usr/bin/osascript -e 'tell application "Said" to quit' 2>/dev/null || true
