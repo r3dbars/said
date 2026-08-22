@@ -11,6 +11,7 @@ matrix records what they have actually proven.
 ./scripts/build-and-run.sh --verify
 ./scripts/run-tests.sh
 ./scripts/capture-smoke.sh
+./scripts/offline-smoke.sh
 ./scripts/soak-smoke.sh --minutes 30
 ```
 
@@ -34,6 +35,13 @@ logging, app-storage, binary-string, and caption-path network boundaries. It
 writes a content-free JSON receipt under `Artifacts/Receipts/Privacy/` and
 marks runtime network observation as unperformed so a static pass cannot be
 mistaken for the remaining live offline-network gate.
+
+The offline smoke requires the model to be installed before launch. It uses an
+`lsof` polling loop from process identification through model load and real
+captioning, plus an overlapping finite `nettop` observation across inference.
+It then writes only sample/connection counts under
+`Artifacts/Receipts/Offline/`. The passing scope is sampled per-process socket
+observation; it is not kernel packet capture.
 
 The soak command defaults to 30 minutes. Every 30 seconds it plays a controlled
 phrase and requires a fresh caption revision, so a pipeline that works once and

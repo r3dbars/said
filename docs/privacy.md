@@ -47,4 +47,12 @@ logging, caption-path networking, binary-string, and app-storage boundaries.
 A successful run writes a content-free JSON receipt under
 `Artifacts/Receipts/Privacy/`; the receipt explicitly records that it is a
 static check and not a runtime network observation. The live offline-network
-and post-quit marker checks remain hardware acceptance gates before release.
+check runs separately with `./scripts/offline-smoke.sh`. It polls Said's
+Internet sockets four times per second with `lsof` beginning immediately after
+process identification, including local model load. After the model is ready,
+`nettop` observes the process once per second across playback, a real caption
+revision, and a quiet post-caption window. The tools overlap live inference.
+Raw observations are discarded; the content-free receipt is written under
+`Artifacts/Receipts/Offline/`. This is direct sampled socket observation, not a
+claim of kernel-level packet interception. The post-quit marker check remains
+a separate hardware acceptance gate before release.

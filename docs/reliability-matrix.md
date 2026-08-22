@@ -46,7 +46,7 @@ retained in a receipt.
 | Full verification before atomic install | **Proven — deterministic** | `testInstallResumesPartialVerifiesAndWritesReceipt` | Clean-user end-to-end install |
 | Corrupt replacement preserves valid model | **Proven — deterministic** | `testCorruptReplacementNeverDestroysExistingValidModel` | Manual reinstall failure UX |
 | Completed verified partial installs without another request | **Proven — deterministic** | `testCompletedVerifiedPartialInstallsWithoutAnotherRequest` | None at this layer |
-| Offline relaunch after installation | **Partial** | Model and capture smokes use the installed local model; caption modules have no network API | Observe live network traffic while offline and captioning |
+| Offline relaunch after installation | **Proven — sampled M5 observation** | `./scripts/offline-smoke.sh` observes Said with `nettop` and independent `lsof` polling from local model load through real captions | Repeat on physical M1/final artifact; sampled sockets are not kernel packet capture |
 
 ## Capture and recovery
 
@@ -87,7 +87,7 @@ retained in a receipt.
 | Diagnostics are typed and content-free | **Proven — deterministic** | `SaidDiagnosticsSnapshotTests` and allowlisted snapshot type | Manual exported/copied report review if export is added |
 | Model replacement/partial-install threats | **Proven — deterministic** | Model manager/downloader tests; exact manifest and atomic install | None at this layer |
 | Own process audio excluded | **Proven — source contract** | Private Core Audio tap excludes Said’s process object | Live feedback/recapture regression observation |
-| Runtime offline-network observation | **Open** | Static receipt explicitly records `runtime_network_observation_performed: false` | Capture network activity with model already installed |
+| Runtime offline-network observation | **Proven — sampled M5 observation** | `offline-smoke.sh`: four-per-second `lsof` from process identification/model load plus overlapping one-second `nettop` across playback, caption revision, and quiet window; content-free receipt | Repeat for final artifact; this does not claim kernel-level packet interception |
 | Post-quit content marker | **Open** | Static scans cannot prove transient runtime content absence | Feed known marker, quit, inspect logs and app-owned storage |
 
 ## Product and distribution
@@ -107,7 +107,8 @@ retained in a receipt.
 ## Ordered remaining release gates
 
 1. Run the 30-, 60-, and 240-minute live soaks with default probe cadence.
-2. Perform runtime offline-network and post-quit secret-marker observations.
+2. Perform the post-quit secret-marker observation and repeat the sampled
+   offline-network smoke against the final signed artifact.
 3. Exercise fresh permission denial/recovery, output-route changes, sleep/wake,
    multi-display/full-screen behavior, and the common-app matrix.
 4. Complete screenshot, VoiceOver, contrast, transparency, motion, and clean-user
