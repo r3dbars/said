@@ -2,6 +2,13 @@ import XCTest
 @testable import SaidCore
 
 final class CaptionWindowingTests: XCTestCase {
+    func testCaptionPanelHeightsAccommodateEachTextSize() {
+        XCTAssertEqual(CaptionTextSize.small.panelHeight, 110)
+        XCTAssertEqual(CaptionTextSize.standard.panelHeight, 126)
+        XCTAssertEqual(CaptionTextSize.large.panelHeight, 160)
+        XCTAssertGreaterThan(CaptionTextSize.large.panelHeight, CaptionTextSize.standard.panelHeight)
+    }
+
     func testNewestWordsRemainVisibleWhenCommittedTextGrows() {
         let result = CaptionWindowing.latest(
             committed: "one two three four five six seven eight nine ten",
