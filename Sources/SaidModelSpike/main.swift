@@ -81,6 +81,7 @@ private func parseInteger<T: FixedWidthInteger>(_ value: String, flag: String) t
 private struct WAVFixture {
     let samples: [Float]
     let durationMilliseconds: Int64
+    let speechOnsetMilliseconds: Int64
 
     init(path: String) throws {
         let data = try Data(contentsOf: URL(fileURLWithPath: path))
@@ -134,6 +135,22 @@ private struct WAVFixture {
         }
         samples = decoded
         durationMilliseconds = Int64(decoded.count) * 1_000 / 16_000
+        speechOnsetMilliseconds = Self.detectSpeechOnset(in: decoded)
+    }
+
+    private static func detectSpeechOnset(in samples: [Float]) -> Int64 {
+        let windowSamples = 320 // 20 ms at 16 kHz
+        let threshold: Float = 0.01
+        guard samples.count >= windowSamples else { return 0 }
+        for start in stride(from: 0, through: samples.count - windowSamples, by: windowSamples) {
+            let sumSquares = samples[start..<(start + windowSamples)].reduce(Float.zero) { partial, sample in
+                partial + sample * sample
+            }
+            if sqrt(sumSquares / Float(windowSamples)) >= threshold {
+                return Int64(start) * 1_000 / 16_000
+            }
+        }
+        return 0
     }
 }
 
@@ -157,14 +174,21 @@ private struct SpikeReceipt: Codable {
     let device: String
     let modelLoadMilliseconds: Double
     let audioDurationMilliseconds: Int64
+    let detectedSpeechOnsetMilliseconds: Int64
     let leftMilliseconds: Int32
     let chunkMilliseconds: Int32
     let rightMilliseconds: Int32
     let feedBlockMilliseconds: Int
     let firstCaptionInputMilliseconds: Int64?
+    let speechToFirstCaptionMilliseconds: Int64?
     let firstCaptionWallMilliseconds: Double?
+    let totalFeedWallMilliseconds: Double
+    let feedWallP50Milliseconds: Double
+    let feedWallP95Milliseconds: Double
+    let feedWallP99Milliseconds: Double
     let committedMutationCount: Int
     let displayDivergenceCount: Int
+    let tentativeEverNonempty: Bool
     let finalCommittedCharacters: Int
     let finalTentativeCharacters: Int
     let feedReceipts: [FeedReceipt]
@@ -176,6 +200,13 @@ private func milliseconds(from duration: Duration) -> Double {
         + Double(components.attoseconds) / 1_000_000_000_000_000
 }
 
+private func percentile(_ values: [Double], _ quantile: Double) -> Double {
+    guard !values.isEmpty else { return 0 }
+    let sorted = values.sorted()
+    let index = min(sorted.count - 1, Int((Double(sorted.count - 1) * quantile).rounded(.up)))
+    return sorted[index]
+}
+
 private func run() throws {
     let configuration = try Configuration.parse(Array(CommandLine.arguments.dropFirst()))
     let fixture = try WAVFixture(path: configuration.audioPath)
@@ -184,8 +215,11 @@ private func run() throws {
     let loadStart = clock.now
     let model = try Model(path: configuration.modelPath, options: ModelOptions(backend: .metal))
     let loadMilliseconds = milliseconds(from: loadStart.duration(to: clock.now))
-    guard model.backend == "metal" else {
-        throw SpikeError.gate("explicit Metal request resolved to \(model.backend)")
+    let loadedDevice = try model.device
+    guard loadedDevice.kind == "metal" else {
+        throw SpikeError.gate(
+            "explicit Metal request resolved to backend=\(model.backend), device-kind=\(loadedDevice.kind)"
+        )
     }
     guard model.capabilities.supportsStreaming else {
         throw SpikeError.gate("model does not advertise streaming")
@@ -215,6 +249,7 @@ private func run() throws {
     var previousCommitted = ""
     var committedMutationCount = 0
     var divergenceCount = 0
+    var tentativeEverNonempty = false
     var firstCaptionInputMilliseconds: Int64?
     var firstCaptionWallMilliseconds: Double?
     var feedReceipts: [FeedReceipt] = []
@@ -229,6 +264,7 @@ private func run() throws {
 
         if !text.committed.hasPrefix(previousCommitted) { committedMutationCount += 1 }
         if text.full != text.display { divergenceCount += 1 }
+        tentativeEverNonempty = tentativeEverNonempty || !text.tentative.isEmpty
         previousCommitted = text.committed
 
         if firstCaptionInputMilliseconds == nil, !text.display.isEmpty {
@@ -258,27 +294,37 @@ private func run() throws {
     let finalText = stream.text
     if !finalText.committed.hasPrefix(previousCommitted) { committedMutationCount += 1 }
     if finalText.full != finalText.display { divergenceCount += 1 }
+    tentativeEverNonempty = tentativeEverNonempty || !finalText.tentative.isEmpty
     if configuration.showText {
         print("final committed=\(String(reflecting: finalText.committed)) tentative=\(String(reflecting: finalText.tentative))")
     }
 
-    let device = try model.device
+    let feedWallValues = feedReceipts.map(\.wallMilliseconds)
     let receipt = SpikeReceipt(
         runtimeCommit: "ea077b87590bcfb090d7c38c03ab36cd1c7005d3",
         backend: model.backend,
         architecture: model.arch,
         variant: model.variant,
-        device: "\(device.name) — \(device.description)",
+        device: "\(loadedDevice.name) — \(loadedDevice.description)",
         modelLoadMilliseconds: loadMilliseconds,
         audioDurationMilliseconds: fixture.durationMilliseconds,
+        detectedSpeechOnsetMilliseconds: fixture.speechOnsetMilliseconds,
         leftMilliseconds: configuration.leftMilliseconds,
         chunkMilliseconds: configuration.chunkMilliseconds,
         rightMilliseconds: configuration.rightMilliseconds,
         feedBlockMilliseconds: configuration.feedBlockMilliseconds,
         firstCaptionInputMilliseconds: firstCaptionInputMilliseconds,
+        speechToFirstCaptionMilliseconds: firstCaptionInputMilliseconds.map {
+            max(0, $0 - fixture.speechOnsetMilliseconds)
+        },
         firstCaptionWallMilliseconds: firstCaptionWallMilliseconds,
+        totalFeedWallMilliseconds: feedWallValues.reduce(0, +),
+        feedWallP50Milliseconds: percentile(feedWallValues, 0.50),
+        feedWallP95Milliseconds: percentile(feedWallValues, 0.95),
+        feedWallP99Milliseconds: percentile(feedWallValues, 0.99),
         committedMutationCount: committedMutationCount,
         displayDivergenceCount: divergenceCount,
+        tentativeEverNonempty: tentativeEverNonempty,
         finalCommittedCharacters: finalText.committed.count,
         finalTentativeCharacters: finalText.tentative.count,
         feedReceipts: feedReceipts
