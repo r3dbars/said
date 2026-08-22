@@ -29,11 +29,16 @@ The PR 0 executable is an intentionally temporary product named
 
 ## Capture lifecycle invariants
 
-- Starting the Core Audio tap is not sufficient proof of capture. Said remains
-  in its starting state until the first owned, nonempty PCM buffer arrives.
-- The single automatic tap reconstruction follows the same rule and remains in
-  recovering state until its first owned, nonempty buffer arrives.
-- Startup fails visibly after a bounded five-second first-buffer timeout.
+- Successful tap, aggregate-device, I/O-proc, and output-device-listener setup
+  establishes capture readiness. Said does not fail merely because the Mac is
+  quiet and Core Audio has not emitted a buffer.
+- The first owned, nonempty PCM buffer proves the playback data path once audio
+  begins. The stall watchdog remains disarmed until that proof exists.
+- A generation-owned default-output listener proactively requests the
+  one bounded tap reconstruction when headphones, speakers, or another output
+  route becomes the new default. Duplicate notifications are debounced.
+- A successful Core Audio reconstruction returns to ready even when the new
+  route is quiet; its next owned buffer re-proves the playback data path.
 - A superseded startup cannot overwrite a later stop with a failure state.
 - If captions were active when macOS announces sleep, Said tears down capture
   and recognition before sleep and restarts once after wake using the already

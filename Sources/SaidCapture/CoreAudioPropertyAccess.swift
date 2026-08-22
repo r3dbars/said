@@ -14,6 +14,13 @@ extension AudioObjectID {
         )
     }
 
+    static func saidDefaultOutputDevice() throws -> AudioDeviceID {
+        try saidSystem.saidRead(
+            kAudioHardwarePropertyDefaultOutputDevice,
+            defaultValue: AudioDeviceID.saidUnknown
+        )
+    }
+
     static func saidProcessObject(for processID: pid_t) throws -> AudioObjectID {
         try saidSystem.saidRead(
             kAudioHardwarePropertyTranslatePIDToProcessObject,
@@ -105,6 +112,7 @@ enum CoreAudioCaptureError: Error {
     case createAggregateDevice(OSStatus)
     case createIOProc(OSStatus)
     case startDevice(OSStatus)
+    case addPropertyListener(OSStatus)
     case invalidOutputDevice
     case invalidFormat
 }

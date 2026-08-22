@@ -14,21 +14,29 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
     private let ioQueue = DispatchQueue(label: "app.said.capture.core-audio", qos: .userInitiated)
     private let watchdogQueue = DispatchQueue(label: "app.said.capture.watchdog", qos: .utility)
 
+    private struct CaptureResources {
+        let generation: UInt64
+        let processTapID: AudioObjectID
+        let aggregateDeviceID: AudioObjectID
+        let deviceProcID: AudioDeviceIOProcID?
+        let routeDeviceID: AudioObjectID
+    }
+
     private var internalState: CaptureState = .idle
     private var generation: UInt64 = 0
-    private var processTapID = AudioObjectID.saidUnknown
-    private var aggregateDeviceID = AudioObjectID.saidUnknown
-    private var deviceProcID: AudioDeviceIOProcID?
+    private var resources: CaptureResources?
+    private var outputDeviceListener: AudioObjectPropertyListenerBlock?
     private var bufferHandler: (@Sendable (AVAudioPCMBuffer) -> Void)?
     private var receivedFirstBuffer = false
     private var lastBufferUptime = 0.0
+    private var lastOutputDeviceChangeUptime = 0.0
     private var recoveryAttempts = 0
     private var recoveryInFlight = false
     private var watchdog: DispatchSourceTimer?
 
     private static let stallSeconds = 4.0
+    private static let outputDeviceChangeDebounceSeconds = 0.3
     private static let maximumRecoveryAttempts = 1
-    private static let firstBufferTimeout: Duration = .seconds(5)
 
     public init() {}
 
@@ -42,6 +50,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             bufferHandler = onBuffer
             receivedFirstBuffer = false
             lastBufferUptime = ProcessInfo.processInfo.systemUptime
+            lastOutputDeviceChangeUptime = 0
             recoveryAttempts = 0
             return generation
         }
@@ -54,7 +63,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             }
             guard mayStart else { throw CancellationError() }
             try setupAndStart(generation: captureGeneration)
-            try await waitForFirstBuffer(generation: captureGeneration)
+            try installOutputDeviceListener(generation: captureGeneration)
             let valid = lock.withLock {
                 guard generation == captureGeneration else { return false }
                 internalState = .capturing
@@ -65,27 +74,13 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         } catch {
             let isCurrentGeneration = lock.withLock { generation == captureGeneration }
             guard isCurrentGeneration else { throw CancellationError() }
-            teardownResources()
+            teardownResources(generation: captureGeneration)
             let failure = classify(error)
             lock.withLock {
                 if generation == captureGeneration { internalState = .failed(failure) }
             }
             throw failure
         }
-    }
-
-    private func waitForFirstBuffer(generation captureGeneration: UInt64) async throws {
-        let clock = ContinuousClock()
-        let deadline = clock.now.advanced(by: Self.firstBufferTimeout)
-        while clock.now < deadline {
-            let proof = lock.withLock { () -> (isCurrent: Bool, received: Bool) in
-                (generation == captureGeneration, receivedFirstBuffer)
-            }
-            guard proof.isCurrent else { throw CancellationError() }
-            if proof.received { return }
-            try await Task.sleep(for: .milliseconds(50))
-        }
-        throw CaptureFailure.startTimedOut
     }
 
     public func stop() async {
@@ -98,14 +93,20 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             recoveryAttempts = 0
         }
         stopWatchdog()
+        removeOutputDeviceListener()
         teardownResources()
         lock.withLock { internalState = .idle }
     }
 
     private func setupAndStart(generation captureGeneration: UInt64) throws {
+        guard lock.withLock({ generation == captureGeneration }) else {
+            throw CancellationError()
+        }
         let outputDevice = try AudioObjectID.saidDefaultSystemOutputDevice()
         guard outputDevice.saidIsValid else { throw CoreAudioCaptureError.invalidOutputDevice }
         let outputUID = try outputDevice.saidDeviceUID()
+        let routeDevice = try AudioObjectID.saidDefaultOutputDevice()
+        guard routeDevice.saidIsValid else { throw CoreAudioCaptureError.invalidOutputDevice }
 
         let ownProcess = try? AudioObjectID.saidProcessObject(for: getpid())
         let excludedProcesses = ownProcess.map { [$0] } ?? []
@@ -117,9 +118,21 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         tapDescription.isPrivate = true
 
         var tapID = AudioObjectID.saidUnknown
+        var aggregateID = AudioObjectID.saidUnknown
+        var procID: AudioDeviceIOProcID?
+        var installed = false
+        defer {
+            if !installed {
+                Self.destroyResources(
+                    aggregateDeviceID: aggregateID,
+                    deviceProcID: procID,
+                    processTapID: tapID
+                )
+            }
+        }
+
         var status = AudioHardwareCreateProcessTap(tapDescription, &tapID)
         guard status == noErr else { throw CoreAudioCaptureError.createTap(status) }
-        processTapID = tapID
 
         var streamDescription = try tapID.saidTapFormat()
         guard let format = AVAudioFormat(streamDescription: &streamDescription) else {
@@ -140,7 +153,6 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             ]],
         ]
 
-        var aggregateID = AudioObjectID.saidUnknown
         status = AudioHardwareCreateAggregateDevice(
             aggregateDescription as CFDictionary,
             &aggregateID
@@ -148,10 +160,9 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         guard status == noErr else {
             throw CoreAudioCaptureError.createAggregateDevice(status)
         }
-        aggregateDeviceID = aggregateID
 
         status = AudioDeviceCreateIOProcIDWithBlock(
-            &deviceProcID,
+            &procID,
             aggregateID,
             ioQueue
         ) { [weak self] _, inputData, _, _, _ in
@@ -168,8 +179,24 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         }
         guard status == noErr else { throw CoreAudioCaptureError.createIOProc(status) }
 
-        status = AudioDeviceStart(aggregateID, deviceProcID)
+        status = AudioDeviceStart(aggregateID, procID)
         guard status == noErr else { throw CoreAudioCaptureError.startDevice(status) }
+
+        let accepted = lock.withLock { () -> Bool in
+            guard generation == captureGeneration,
+                  resources == nil
+            else { return false }
+            resources = CaptureResources(
+                generation: captureGeneration,
+                processTapID: tapID,
+                aggregateDeviceID: aggregateID,
+                deviceProcID: procID,
+                routeDeviceID: routeDevice
+            )
+            return true
+        }
+        guard accepted else { throw CancellationError() }
+        installed = true
     }
 
     private static func copyBuffer(_ source: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
@@ -220,13 +247,21 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         timer.schedule(deadline: .now() + 1, repeating: 1)
         timer.setEventHandler { [weak self] in
             guard let self else { return }
-            let stalled = self.lock.withLock {
-                self.generation == captureGeneration
-                    && self.internalState == .capturing
-                    && self.receivedFirstBuffer
-                    && ProcessInfo.processInfo.systemUptime - self.lastBufferUptime > Self.stallSeconds
+            let currentOutputDevice = try? AudioObjectID.saidDefaultOutputDevice()
+            let shouldRecover = self.lock.withLock {
+                guard self.generation == captureGeneration,
+                      self.internalState == .capturing
+                else { return false }
+                return CaptureWatchdogPolicy.shouldRecover(
+                    hasReceivedFirstBuffer: self.receivedFirstBuffer,
+                    secondsSinceLastBuffer: ProcessInfo.processInfo.systemUptime
+                        - self.lastBufferUptime,
+                    stallSeconds: Self.stallSeconds,
+                    outputDeviceChanged: currentOutputDevice?.saidIsValid == true
+                        && currentOutputDevice != self.resources?.routeDeviceID
+                )
             }
-            if stalled { self.recover(generation: captureGeneration) }
+            if shouldRecover { self.recover(generation: captureGeneration) }
         }
         lock.withLock { watchdog = timer }
         timer.resume()
@@ -239,6 +274,76 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             return current
         }
         timer?.cancel()
+    }
+
+    private func installOutputDeviceListener(generation captureGeneration: UInt64) throws {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        let listener: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+            self?.handleOutputDeviceChange(generation: captureGeneration)
+        }
+        let status = AudioObjectAddPropertyListenerBlock(
+            .saidSystem,
+            &address,
+            ioQueue,
+            listener
+        )
+        guard status == noErr else {
+            throw CoreAudioCaptureError.addPropertyListener(status)
+        }
+        let accepted = lock.withLock { () -> Bool in
+            guard generation == captureGeneration,
+                  outputDeviceListener == nil
+            else { return false }
+            outputDeviceListener = listener
+            return true
+        }
+        guard accepted else {
+            _ = AudioObjectRemovePropertyListenerBlock(
+                .saidSystem,
+                &address,
+                ioQueue,
+                listener
+            )
+            throw CancellationError()
+        }
+    }
+
+    private func removeOutputDeviceListener() {
+        let listener = lock.withLock { () -> AudioObjectPropertyListenerBlock? in
+            let current = outputDeviceListener
+            outputDeviceListener = nil
+            return current
+        }
+        guard let listener else { return }
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioHardwarePropertyDefaultOutputDevice,
+            mScope: kAudioObjectPropertyScopeGlobal,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        _ = AudioObjectRemovePropertyListenerBlock(
+            .saidSystem,
+            &address,
+            ioQueue,
+            listener
+        )
+    }
+
+    private func handleOutputDeviceChange(generation captureGeneration: UInt64) {
+        let now = ProcessInfo.processInfo.systemUptime
+        let shouldRecover = lock.withLock { () -> Bool in
+            guard generation == captureGeneration,
+                  internalState == .capturing,
+                  now - lastOutputDeviceChangeUptime
+                    >= Self.outputDeviceChangeDebounceSeconds
+            else { return false }
+            lastOutputDeviceChangeUptime = now
+            return true
+        }
+        if shouldRecover { recover(generation: captureGeneration) }
     }
 
     private func recover(generation captureGeneration: UInt64) {
@@ -261,12 +366,21 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
 
         ioQueue.async { [weak self] in
             guard let self else { return }
-            self.teardownResources()
+            guard self.lock.withLock({
+                self.generation == captureGeneration && self.recoveryInFlight
+            }) else { return }
+            self.teardownResources(generation: captureGeneration)
             Thread.sleep(forTimeInterval: 0.15)
+            guard self.lock.withLock({
+                self.generation == captureGeneration && self.recoveryInFlight
+            }) else { return }
             do {
                 try self.setupAndStart(generation: captureGeneration)
-                Task { [weak self] in
-                    await self?.proveRecoveredStream(generation: captureGeneration)
+                self.lock.withLock {
+                    if self.generation == captureGeneration {
+                        self.internalState = .capturing
+                        self.recoveryInFlight = false
+                    }
                 }
             } catch {
                 self.lock.withLock {
@@ -279,47 +393,36 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         }
     }
 
-    private func proveRecoveredStream(generation captureGeneration: UInt64) async {
-        do {
-            try await waitForFirstBuffer(generation: captureGeneration)
-            lock.withLock {
-                if generation == captureGeneration {
-                    internalState = .capturing
-                    recoveryInFlight = false
-                }
-            }
-        } catch is CancellationError {
-            return
-        } catch {
-            let isCurrentGeneration = lock.withLock { generation == captureGeneration }
-            guard isCurrentGeneration else { return }
-            teardownResources()
-            lock.withLock {
-                if generation == captureGeneration {
-                    internalState = .failed(classify(error))
-                    recoveryInFlight = false
-                }
-            }
+    private func teardownResources(generation expectedGeneration: UInt64? = nil) {
+        let ownedResources = lock.withLock { () -> CaptureResources? in
+            guard let current = resources,
+                  expectedGeneration == nil || current.generation == expectedGeneration
+            else { return nil }
+            resources = nil
+            return current
         }
+        guard let ownedResources else { return }
+        Self.destroyResources(
+            aggregateDeviceID: ownedResources.aggregateDeviceID,
+            deviceProcID: ownedResources.deviceProcID,
+            processTapID: ownedResources.processTapID
+        )
     }
 
-    private func teardownResources() {
-        let resources = lock.withLock { () -> (AudioObjectID, AudioDeviceIOProcID?, AudioObjectID) in
-            let result = (aggregateDeviceID, deviceProcID, processTapID)
-            aggregateDeviceID = .saidUnknown
-            deviceProcID = nil
-            processTapID = .saidUnknown
-            return result
-        }
-        if resources.0.saidIsValid {
-            _ = AudioDeviceStop(resources.0, resources.1)
-            if let ioProc = resources.1 {
-                _ = AudioDeviceDestroyIOProcID(resources.0, ioProc)
+    private static func destroyResources(
+        aggregateDeviceID: AudioObjectID,
+        deviceProcID: AudioDeviceIOProcID?,
+        processTapID: AudioObjectID
+    ) {
+        if aggregateDeviceID.saidIsValid {
+            _ = AudioDeviceStop(aggregateDeviceID, deviceProcID)
+            if let deviceProcID {
+                _ = AudioDeviceDestroyIOProcID(aggregateDeviceID, deviceProcID)
             }
-            _ = AudioHardwareDestroyAggregateDevice(resources.0)
+            _ = AudioHardwareDestroyAggregateDevice(aggregateDeviceID)
         }
-        if resources.2.saidIsValid {
-            _ = AudioHardwareDestroyProcessTap(resources.2)
+        if processTapID.saidIsValid {
+            _ = AudioHardwareDestroyProcessTap(processTapID)
         }
     }
 
@@ -336,7 +439,8 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
              CoreAudioCaptureError.createTap(let value),
              CoreAudioCaptureError.createAggregateDevice(let value),
              CoreAudioCaptureError.createIOProc(let value),
-             CoreAudioCaptureError.startDevice(let value):
+             CoreAudioCaptureError.startDevice(let value),
+             CoreAudioCaptureError.addPropertyListener(let value):
             status = value
         default:
             status = nil
