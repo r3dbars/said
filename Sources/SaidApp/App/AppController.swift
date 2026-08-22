@@ -20,6 +20,7 @@ final class AppController {
         modelLifecycle = lifecycle
         lifecycle.onReady = { [weak capture] url in capture?.start(modelURL: url) }
         capture.onCaption = { [weak panel] snapshot in panel?.show(snapshot) }
+        capture.onCaptionReset = { [weak panel] in panel?.clearAndHide() }
         setupWindow = SetupWindowController(
             model: model,
             onPreview: { [weak panel] in panel?.showPreview() },

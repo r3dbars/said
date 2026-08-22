@@ -16,9 +16,10 @@ normalizes it to 16 kHz mono in memory, and streams it through Parakeet Unified
 EN 0.6B Q8_0 using pinned `transcribe.cpp` Swift bindings on Metal. Captions
 appear in a floating two-line panel and are never persisted by Said.
 
-The end-to-end path is proven on the available M5 Max. The required physical
-M1/16 GB release receipt, production model installer, and signed/notarized
-distribution remain outstanding.
+The end-to-end path is proven on the available M5 Max. The production model
+manager now supports resumable download, exact size/SHA-256 verification,
+atomic installation, receipts, reinstall, and removal. The required physical
+M1/16 GB release receipt and signed/notarized distribution remain outstanding.
 
 To build, package, and launch the current local alpha:
 
@@ -33,6 +34,7 @@ To reproduce the available-host proof:
 ./scripts/download-model.sh
 ./scripts/streaming-smoke.sh
 ./scripts/performance-smoke.sh
+./scripts/privacy-smoke.sh
 ```
 
 Read [the product requirements](docs/PRD.md) and
