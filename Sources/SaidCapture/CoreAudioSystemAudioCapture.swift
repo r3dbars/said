@@ -23,7 +23,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
     }
 
     private var internalState: CaptureState = .idle
-    private var generation: UInt64 = 0
+    private var operationEpoch = OperationEpoch()
     private var resources: CaptureResources?
     private var outputDeviceListener: AudioObjectPropertyListenerBlock?
     private var bufferHandler: (@Sendable (AVAudioPCMBuffer) -> Void)?
@@ -45,7 +45,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
     ) async throws {
         await stop()
         let captureGeneration = lock.withLock { () -> UInt64 in
-            generation &+= 1
+            let generation = operationEpoch.begin()
             internalState = .preparing
             bufferHandler = onBuffer
             receivedFirstBuffer = false
@@ -57,7 +57,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
 
         do {
             let mayStart = lock.withLock { () -> Bool in
-                guard generation == captureGeneration else { return false }
+                guard operationEpoch.owns(captureGeneration) else { return false }
                 internalState = .starting
                 return true
             }
@@ -65,19 +65,23 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             try setupAndStart(generation: captureGeneration)
             try installOutputDeviceListener(generation: captureGeneration)
             let valid = lock.withLock {
-                guard generation == captureGeneration else { return false }
+                guard operationEpoch.owns(captureGeneration) else { return false }
                 internalState = .capturing
                 return true
             }
             guard valid else { throw CancellationError() }
             startWatchdog(generation: captureGeneration)
         } catch {
-            let isCurrentGeneration = lock.withLock { generation == captureGeneration }
+            let isCurrentGeneration = lock.withLock {
+                operationEpoch.owns(captureGeneration)
+            }
             guard isCurrentGeneration else { throw CancellationError() }
             teardownResources(generation: captureGeneration)
             let failure = classify(error)
             lock.withLock {
-                if generation == captureGeneration { internalState = .failed(failure) }
+                if operationEpoch.owns(captureGeneration) {
+                    internalState = .failed(failure)
+                }
             }
             throw failure
         }
@@ -85,7 +89,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
 
     public func stop() async {
         lock.withLock {
-            generation &+= 1
+            operationEpoch.invalidate()
             internalState = .stopping
             bufferHandler = nil
             receivedFirstBuffer = false
@@ -99,7 +103,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
     }
 
     private func setupAndStart(generation captureGeneration: UInt64) throws {
-        guard lock.withLock({ generation == captureGeneration }) else {
+        guard lock.withLock({ operationEpoch.owns(captureGeneration) }) else {
             throw CancellationError()
         }
         let outputDevice = try AudioObjectID.saidDefaultSystemOutputDevice()
@@ -183,7 +187,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         guard status == noErr else { throw CoreAudioCaptureError.startDevice(status) }
 
         let accepted = lock.withLock { () -> Bool in
-            guard generation == captureGeneration,
+            guard operationEpoch.owns(captureGeneration),
                   resources == nil
             else { return false }
             resources = CaptureResources(
@@ -225,10 +229,10 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
 
     private func accept(_ buffer: AVAudioPCMBuffer, generation captureGeneration: UInt64) {
         let handler: (@Sendable (AVAudioPCMBuffer) -> Void)? = lock.withLock {
-            guard generation == captureGeneration,
-                  internalState == .starting
-                    || internalState == .capturing
-                    || isRecovering(internalState)
+            guard operationEpoch.acceptsCaptureBuffer(
+                from: captureGeneration,
+                while: internalState
+            )
             else { return nil }
             receivedFirstBuffer = true
             lastBufferUptime = ProcessInfo.processInfo.systemUptime
@@ -249,7 +253,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             guard let self else { return }
             let currentOutputDevice = try? AudioObjectID.saidDefaultOutputDevice()
             let shouldRecover = self.lock.withLock {
-                guard self.generation == captureGeneration,
+                guard self.operationEpoch.owns(captureGeneration),
                       self.internalState == .capturing
                 else { return false }
                 return CaptureWatchdogPolicy.shouldRecover(
@@ -295,7 +299,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             throw CoreAudioCaptureError.addPropertyListener(status)
         }
         let accepted = lock.withLock { () -> Bool in
-            guard generation == captureGeneration,
+            guard operationEpoch.owns(captureGeneration),
                   outputDeviceListener == nil
             else { return false }
             outputDeviceListener = listener
@@ -335,7 +339,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
     private func handleOutputDeviceChange(generation captureGeneration: UInt64) {
         let now = ProcessInfo.processInfo.systemUptime
         let shouldRecover = lock.withLock { () -> Bool in
-            guard generation == captureGeneration,
+            guard operationEpoch.owns(captureGeneration),
                   internalState == .capturing,
                   now - lastOutputDeviceChangeUptime
                     >= Self.outputDeviceChangeDebounceSeconds
@@ -348,12 +352,14 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
 
     private func recover(generation captureGeneration: UInt64) {
         let shouldRecover = lock.withLock {
-            guard generation == captureGeneration,
+            guard operationEpoch.owns(captureGeneration),
                   !recoveryInFlight,
                   recoveryAttempts < Self.maximumRecoveryAttempts,
                   bufferHandler != nil
             else {
-                if generation == captureGeneration { internalState = .failed(.stalled) }
+                if operationEpoch.owns(captureGeneration) {
+                    internalState = .failed(.stalled)
+                }
                 return false
             }
             recoveryInFlight = true
@@ -367,24 +373,24 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         ioQueue.async { [weak self] in
             guard let self else { return }
             guard self.lock.withLock({
-                self.generation == captureGeneration && self.recoveryInFlight
+                self.operationEpoch.owns(captureGeneration) && self.recoveryInFlight
             }) else { return }
             self.teardownResources(generation: captureGeneration)
             Thread.sleep(forTimeInterval: 0.15)
             guard self.lock.withLock({
-                self.generation == captureGeneration && self.recoveryInFlight
+                self.operationEpoch.owns(captureGeneration) && self.recoveryInFlight
             }) else { return }
             do {
                 try self.setupAndStart(generation: captureGeneration)
                 self.lock.withLock {
-                    if self.generation == captureGeneration {
+                    if self.operationEpoch.owns(captureGeneration) {
                         self.internalState = .capturing
                         self.recoveryInFlight = false
                     }
                 }
             } catch {
                 self.lock.withLock {
-                    if self.generation == captureGeneration {
+                    if self.operationEpoch.owns(captureGeneration) {
                         self.internalState = .failed(self.classify(error))
                         self.recoveryInFlight = false
                     }

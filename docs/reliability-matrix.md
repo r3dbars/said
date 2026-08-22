@@ -59,8 +59,8 @@ retained in a receipt.
 | Fresh stream does not recover at threshold | **Proven — deterministic** | `testFreshStreamDoesNotRecoverAtThreshold` | None at policy layer |
 | Default output change requests recovery before first buffer | **Proven — deterministic** | `testOutputDeviceChangeRecoversEvenBeforeFirstBuffer`; generation-owned listener in capture source | Built-in/AirPods/Bluetooth/output-device hardware matrix |
 | Sleep/wake resumes only an active session | **Proven — deterministic policy** | `SaidStatusTextTests.testOnlyActiveCaptureStatesResumeAfterSystemWake`; AppController lifecycle source | Real sleep/wake while captioning |
-| Stale callbacks cannot revive stopped capture | **Partial** | Generation checks and resource ownership are implemented in `CoreAudioSystemAudioCapture` | Focused injected-callback test or live race harness |
-| Rapid start/stop and stop-during-start | **Open** | Source has explicit generation ownership | Deterministic injected capture seam and hardware stress run |
+| Stale callbacks cannot revive stopped capture | **Proven — deterministic ownership** | Production Core Audio callback acceptance uses `OperationEpoch`; `OperationEpochTests.testStopInvalidatesLateStartAndBufferCallbacks` creates an owned callback generation, invalidates it, and proves that same production gate rejects it in a live state | Hardware race stress remains part of broader capture acceptance |
+| Rapid start/stop and stop-during-start | **Partial** | Both model/pipeline continuations and Core Audio callbacks use production generation gates; `OperationEpochTests.testRepeatedRapidStartStopCannotReuseAnOldOwner` proves 1,000 superseded start/stop owners remain rejected | Run rapid live start/stop and stop-during-model-load hardware stress |
 | Permission denial and recovery | **Open** | Recovery UI and System Settings action are implemented | Fresh denial, Retry, and settings walkthrough receipt |
 
 ## Long-run and performance

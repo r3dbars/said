@@ -15,6 +15,7 @@ final class AudioCaptureCoordinator {
     private var normalizedBlockCount = 0
     private var asrRestartAttempts = 0
     private var performanceCounters = ASRPerformanceCounters()
+    private var operationEpoch = OperationEpoch()
     var onCaption: ((ASRTextSnapshot) -> Void)?
     var onCaptionReset: (() -> Void)?
     var onStarted: (() -> Void)?
@@ -30,16 +31,28 @@ final class AudioCaptureCoordinator {
 
     func start(modelURL: URL) {
         guard model.captureState == .idle || isFailure(model.captureState) else { return }
+        let startEpoch = operationEpoch.begin()
         model.captureState = .preparing
         SaidLogger.capture.info("Starting system-audio caption pipeline")
         Task {
+            let recognizer = ParakeetUnifiedASR(modelPath: modelURL.path)
             do {
-                let recognizer = ParakeetUnifiedASR(modelPath: modelURL.path)
-                self.recognizer = recognizer
                 try await recognizer.loadModel()
+                guard operationEpoch.owns(startEpoch) else {
+                    await recognizer.unloadModel()
+                    return
+                }
+                self.recognizer = recognizer
                 SaidLogger.model.info("Loaded pinned model on Metal")
                 try await recognizer.startStream()
-                let inputBuffer = beginFeedLoop(recognizer: recognizer)
+                guard operationEpoch.owns(startEpoch) else {
+                    await recognizer.unloadModel()
+                    return
+                }
+                let inputBuffer = beginFeedLoop(
+                    recognizer: recognizer,
+                    operationEpoch: startEpoch
+                )
                 try await capture.start { [weak model] buffer in
                     let level = AudioLevelMeter.normalizedLevel(for: buffer)
                     Task { @MainActor in model?.audioLevel = level }
@@ -55,31 +68,55 @@ final class AudioCaptureCoordinator {
                             }
                             if inputBuffer.enqueue(block) == .overflow {
                                 Task { @MainActor in
+                                    guard self.operationEpoch.owns(startEpoch) else { return }
                                     SaidLogger.audio.error("Audio block queue overflowed")
-                                    self.failPipeline(.unavailable)
+                                    self.failPipeline(.unavailable, operationEpoch: startEpoch)
                                 }
                             }
                         },
                         onError: { [weak self] in
-                            Task { @MainActor in self?.failPipeline(.unavailable) }
+                            Task { @MainActor in
+                                self?.failPipeline(.unavailable, operationEpoch: startEpoch)
+                            }
                         }
                     )
+                }
+                guard operationEpoch.owns(startEpoch) else {
+                    await recognizer.unloadModel()
+                    return
                 }
                 model.captureState = .capturing
                 SaidLogger.capture.info("System-audio tap started; awaiting playback buffers")
                 beginStatePolling()
                 onStarted?()
             } catch is CancellationError {
-                await teardownResources(finalState: .idle)
+                await teardownResources(
+                    finalState: .idle,
+                    operationEpoch: startEpoch
+                )
             } catch let failure as CaptureFailure {
+                guard operationEpoch.owns(startEpoch) else {
+                    await recognizer.unloadModel()
+                    return
+                }
                 SaidLogger.capture.error(
                     "System-audio capture failed with safe code \(failure.rawValue, privacy: .public)"
                 )
-                await teardownResources(finalState: .failed(failure))
+                await teardownResources(
+                    finalState: .failed(failure),
+                    operationEpoch: startEpoch
+                )
                 onFailure?(failure)
             } catch {
+                guard operationEpoch.owns(startEpoch) else {
+                    await recognizer.unloadModel()
+                    return
+                }
                 SaidLogger.capture.error("Caption pipeline failed before capture")
-                await teardownResources(finalState: .failed(.unavailable))
+                await teardownResources(
+                    finalState: .failed(.unavailable),
+                    operationEpoch: startEpoch
+                )
                 onFailure?(.unavailable)
             }
         }
@@ -90,11 +127,17 @@ final class AudioCaptureCoordinator {
     }
 
     func stopAndWait() async {
+        let stopEpoch = operationEpoch.begin()
         SaidLogger.capture.info("Stopping system-audio caption pipeline")
-        await teardownResources(finalState: .idle)
+        await teardownResources(finalState: .idle, operationEpoch: stopEpoch)
     }
 
-    private func teardownResources(finalState: CaptureState) async {
+    private func teardownResources(
+        finalState: CaptureState,
+        operationEpoch expectedEpoch: UInt64
+    ) async {
+        guard operationEpoch.owns(expectedEpoch) else { return }
+        model.captureState = .stopping
         statePollTask?.cancel()
         statePollTask = nil
         let activeFeedTask = feedTask
@@ -112,11 +155,14 @@ final class AudioCaptureCoordinator {
         performanceCounters = ASRPerformanceCounters()
         asrRestartAttempts = 0
         model.audioLevel = 0
-        model.captureState = finalState
+        if operationEpoch.owns(expectedEpoch) {
+            model.captureState = finalState
+        }
     }
 
     private func beginFeedLoop(
-        recognizer: ParakeetUnifiedASR
+        recognizer: ParakeetUnifiedASR,
+        operationEpoch expectedEpoch: UInt64
     ) -> PCMBlockBuffer {
         blockBuffer?.finish()
         feedTask?.cancel()
@@ -126,7 +172,9 @@ final class AudioCaptureCoordinator {
             var consumedBlockCount = 0
             let clock = ContinuousClock()
             while let block = await buffer.next() {
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled,
+                      self?.operationEpoch.owns(expectedEpoch) == true
+                else { return }
                 do {
                     consumedBlockCount += 1
                     if consumedBlockCount == 1 {
@@ -143,9 +191,14 @@ final class AudioCaptureCoordinator {
                         self?.recordFeedDuration(startedAt.duration(to: clock.now))
                     }
                 } catch {
-                    guard let self, await self.restartASRIfAllowed(recognizer) else {
+                    guard let self,
+                          await self.restartASRIfAllowed(
+                              recognizer,
+                              operationEpoch: expectedEpoch
+                          )
+                    else {
                         SaidLogger.asr.error("Local recognizer feed failed after bounded recovery")
-                        self?.failPipeline(.unavailable)
+                        self?.failPipeline(.unavailable, operationEpoch: expectedEpoch)
                         return
                     }
                 }
@@ -154,8 +207,13 @@ final class AudioCaptureCoordinator {
         return buffer
     }
 
-    private func restartASRIfAllowed(_ recognizer: ParakeetUnifiedASR) async -> Bool {
-        guard asrRestartAttempts < Self.maximumASRRestartAttempts else { return false }
+    private func restartASRIfAllowed(
+        _ recognizer: ParakeetUnifiedASR,
+        operationEpoch expectedEpoch: UInt64
+    ) async -> Bool {
+        guard operationEpoch.owns(expectedEpoch),
+              asrRestartAttempts < Self.maximumASRRestartAttempts
+        else { return false }
         asrRestartAttempts += 1
         model.captureState = .recovering(attempt: asrRestartAttempts)
         SaidLogger.asr.error(
@@ -164,6 +222,7 @@ final class AudioCaptureCoordinator {
         await recognizer.resetStream()
         do {
             try await recognizer.startStream()
+            guard operationEpoch.owns(expectedEpoch) else { return false }
             onCaptionReset?()
             model.captureState = .capturing
             return true
@@ -189,15 +248,23 @@ final class AudioCaptureCoordinator {
         )
     }
 
-    private func failPipeline(_ failure: CaptureFailure) {
-        guard !isFailure(model.captureState) else { return }
+    private func failPipeline(
+        _ failure: CaptureFailure,
+        operationEpoch expectedEpoch: UInt64
+    ) {
+        guard operationEpoch.owns(expectedEpoch),
+              !isFailure(model.captureState)
+        else { return }
         statePollTask?.cancel()
         statePollTask = nil
         model.captureState = .failed(failure)
         onFailure?(failure)
         Task { [weak self] in
             guard let self else { return }
-            await teardownResources(finalState: .failed(failure))
+            await teardownResources(
+                finalState: .failed(failure),
+                operationEpoch: expectedEpoch
+            )
         }
     }
 
