@@ -16,7 +16,7 @@ struct SettingsView: View {
                     Text("Your microphone, camera, screen pixels, keyboard, clipboard, files, or browser history.")
                 }
                 Section("What leaves your Mac") {
-                    Text("Nothing from your audio or captions. Said connects only to download its speech model and check for app updates.")
+                    Text("Nothing from your audio or captions. This alpha connects only to download its speech model.")
                 }
                 Section("What is saved") {
                     Text("The speech model and your app settings. Said does not save audio or caption text.")

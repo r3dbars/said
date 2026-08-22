@@ -18,9 +18,13 @@ final class MenuBarController: NSObject {
     init(model: AppModel) {
         self.model = model
         super.init()
-        cancellable = model.$captureState.sink { [weak self] state in
-            self?.statusMenuItem?.title = Self.statusTitle(for: state)
-        }
+        cancellable = Publishers.CombineLatest(model.$modelState, model.$captureState)
+            .sink { [weak self] modelState, captureState in
+                self?.statusMenuItem?.title = SaidStatusText.title(
+                    model: modelState,
+                    capture: captureState
+                )
+            }
     }
 
     func install() {
@@ -39,7 +43,10 @@ final class MenuBarController: NSObject {
     private func makeMenu() -> NSMenu {
         let menu = NSMenu(title: "Said")
         let status = NSMenuItem(
-            title: Self.statusTitle(for: model?.captureState ?? .idle),
+            title: SaidStatusText.title(
+                model: model?.modelState ?? .checking,
+                capture: model?.captureState ?? .idle
+            ),
             action: nil,
             keyEquivalent: ""
         )
@@ -71,15 +78,4 @@ final class MenuBarController: NSObject {
     @objc private func openPrivacy() { onOpenPrivacy?() }
     @objc private func quit() { NSApp.terminate(nil) }
 
-    private static func statusTitle(for state: CaptureState) -> String {
-        switch state {
-        case .idle: "Ready locally"
-        case .preparing: "Loading speech model…"
-        case .starting: "Starting audio capture…"
-        case .capturing: "Listening locally"
-        case .recovering: "Restarting audio capture…"
-        case .stopping: "Stopping…"
-        case .failed: "Said needs attention"
-        }
-    }
 }

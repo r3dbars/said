@@ -18,17 +18,21 @@ final class AppController {
         audioCapture = capture
         let lifecycle = ModelLifecycleController(appModel: model)
         modelLifecycle = lifecycle
-        lifecycle.onReady = { [weak capture] url in capture?.start(modelURL: url) }
-        capture.onCaption = { [weak panel] snapshot in panel?.show(snapshot) }
-        capture.onCaptionReset = { [weak panel] in panel?.clearAndHide() }
-        setupWindow = SetupWindowController(
+        let setup = SetupWindowController(
             model: model,
             onPreview: { [weak panel] in panel?.showPreview() },
             onStartAudio: { [weak lifecycle] in lifecycle?.performPrimaryAction() }
         )
+        setupWindow = setup
         settingsWindow = SettingsWindowController(model: model)
         menuBar = MenuBarController(model: model)
 
+        lifecycle.onReady = { [weak capture] url in capture?.start(modelURL: url) }
+        lifecycle.onNeedsSetup = { [weak setup] in setup?.show() }
+        capture.onCaption = { [weak panel] snapshot in panel?.show(snapshot) }
+        capture.onCaptionReset = { [weak panel] in panel?.clearAndHide() }
+        capture.onStarted = { [weak setup] in setup?.hide() }
+        capture.onFailure = { [weak setup] _ in setup?.show() }
         menuBar.onMoveCaptions = { [weak captionPanel] in captionPanel?.beginPlacement() }
         menuBar.onShowPreview = { [weak captionPanel] in captionPanel?.showPreview() }
         menuBar.onOpenSetup = { [weak setupWindow] in setupWindow?.show() }
@@ -53,7 +57,6 @@ final class AppController {
 
     func start() {
         menuBar.install()
-        setupWindow.show()
         modelLifecycle.prepareForLaunch()
     }
 

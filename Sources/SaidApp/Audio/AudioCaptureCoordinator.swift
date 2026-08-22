@@ -17,6 +17,8 @@ final class AudioCaptureCoordinator {
     private var performanceCounters = ASRPerformanceCounters()
     var onCaption: ((ASRTextSnapshot) -> Void)?
     var onCaptionReset: (() -> Void)?
+    var onStarted: (() -> Void)?
+    var onFailure: ((CaptureFailure) -> Void)?
 
     private static let maximumASRRestartAttempts = 1
     private static let audioBufferCapacity = 16 // 2.56 seconds at 160 ms per block.
@@ -66,14 +68,17 @@ final class AudioCaptureCoordinator {
                 model.captureState = .capturing
                 SaidLogger.capture.info("System-audio tap started; awaiting playback buffers")
                 beginStatePolling()
+                onStarted?()
             } catch let failure as CaptureFailure {
                 SaidLogger.capture.error(
                     "System-audio capture failed with safe code \(failure.rawValue, privacy: .public)"
                 )
                 await teardownResources(finalState: .failed(failure))
+                onFailure?(failure)
             } catch {
                 SaidLogger.capture.error("Caption pipeline failed before capture")
                 await teardownResources(finalState: .failed(.unavailable))
+                onFailure?(.unavailable)
             }
         }
     }
@@ -187,6 +192,7 @@ final class AudioCaptureCoordinator {
         statePollTask?.cancel()
         statePollTask = nil
         model.captureState = .failed(failure)
+        onFailure?(failure)
         Task { [weak self] in
             guard let self else { return }
             await teardownResources(finalState: .failed(failure))

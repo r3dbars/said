@@ -6,6 +6,7 @@ import SaidModel
 @MainActor
 final class ModelLifecycleController {
     var onReady: ((URL) -> Void)?
+    var onNeedsSetup: (() -> Void)?
 
     private let appModel: AppModel
     private let manager: ModelManager
@@ -35,6 +36,7 @@ final class ModelLifecycleController {
             }
             resolvedModelURL = nil
             appModel.modelState = .notDownloaded
+            onNeedsSetup?()
         }
     }
 
