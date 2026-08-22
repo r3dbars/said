@@ -5,8 +5,6 @@ import SaidCore
 @MainActor
 final class MenuBarController: NSObject {
     var onMoveCaptions: (() -> Void)?
-    var onShowPreview: (() -> Void)?
-    var onOpenSetup: (() -> Void)?
     var onOpenSettings: (() -> Void)?
     var onOpenPrivacy: (() -> Void)?
 
@@ -54,10 +52,8 @@ final class MenuBarController: NSObject {
         statusMenuItem = status
         menu.addItem(status)
         menu.addItem(.separator())
-        menu.addItem(item("Show Caption Preview", action: #selector(showPreview)))
         menu.addItem(item("Move Captions…", action: #selector(moveCaptions)))
         menu.addItem(.separator())
-        menu.addItem(item("Set Up Said…", action: #selector(openSetup)))
         menu.addItem(item("Settings…", action: #selector(openSettings), key: ","))
         menu.addItem(item("Privacy…", action: #selector(openPrivacy)))
         menu.addItem(.separator())
@@ -71,9 +67,7 @@ final class MenuBarController: NSObject {
         return menuItem
     }
 
-    @objc private func showPreview() { onShowPreview?() }
     @objc private func moveCaptions() { onMoveCaptions?() }
-    @objc private func openSetup() { onOpenSetup?() }
     @objc private func openSettings() { onOpenSettings?() }
     @objc private func openPrivacy() { onOpenPrivacy?() }
     @objc private func quit() { NSApp.terminate(nil) }

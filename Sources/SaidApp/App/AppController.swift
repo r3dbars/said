@@ -41,8 +41,6 @@ final class AppController {
         capture.onStarted = { [weak setup] in setup?.hide() }
         capture.onFailure = { [weak setup] _ in setup?.show() }
         menuBar.onMoveCaptions = { [weak captionPanel] in captionPanel?.beginPlacement() }
-        menuBar.onShowPreview = { [weak captionPanel] in captionPanel?.showPreview() }
-        menuBar.onOpenSetup = { [weak setupWindow] in setupWindow?.show() }
         menuBar.onOpenSettings = { [weak settingsWindow] in settingsWindow?.show() }
         menuBar.onOpenPrivacy = { [weak settingsWindow] in settingsWindow?.showPrivacy() }
         captionPanel.onPlacementFinished = { [weak captionPanel] in captionPanel?.endPlacement() }
