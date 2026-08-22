@@ -63,6 +63,15 @@ final class AppController {
             guard let url = URL(string: "https://github.com/r3dbars/said/releases") else { return }
             NSWorkspace.shared.open(url)
         }
+        model.onOpenDiagnostics = { [weak settingsWindow] in
+            settingsWindow?.showDiagnostics()
+        }
+        model.onOpenSystemAudioSettings = {
+            guard let url = URL(
+                string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+            ) else { return }
+            NSWorkspace.shared.open(url)
+        }
     }
 
     func start() {

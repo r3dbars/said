@@ -47,7 +47,17 @@ struct SetupView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 HStack {
-                    Button("Preview Captions", action: onPreview)
+                    if shouldOfferSystemSettings {
+                        Button("Open System Settings") {
+                            model.openSystemAudioSettings()
+                        }
+                    }
+                    if shouldOfferDiagnostics {
+                        Button("Diagnostics…") { model.openDiagnostics() }
+                    }
+                    if !shouldOfferDiagnostics {
+                        Button("Preview Captions", action: onPreview)
+                    }
                     Button(primaryActionTitle, action: onStartAudio)
                         .buttonStyle(.borderedProminent)
                         .disabled(isPrimaryActionDisabled)
@@ -84,6 +94,17 @@ struct SetupView: View {
         case .checking, .downloading, .verifying: true
         default: model.captureState == .preparing || model.captureState == .starting || model.captureState == .capturing
         }
+    }
+
+    private var shouldOfferSystemSettings: Bool {
+        if case .failed(.permissionDenied) = model.captureState { return true }
+        return false
+    }
+
+    private var shouldOfferDiagnostics: Bool {
+        if case .failed = model.captureState { return true }
+        if case .failed = model.modelState { return true }
+        return false
     }
 
     private func formatBytes(_ bytes: Int64) -> String {
