@@ -1,4 +1,6 @@
 import AppKit
+import Combine
+import SaidCore
 
 @MainActor
 final class MenuBarController: NSObject {
@@ -9,6 +11,17 @@ final class MenuBarController: NSObject {
     var onOpenPrivacy: (() -> Void)?
 
     private var statusItem: NSStatusItem?
+    private weak var model: AppModel?
+    private var cancellable: AnyCancellable?
+    private weak var statusMenuItem: NSMenuItem?
+
+    init(model: AppModel) {
+        self.model = model
+        super.init()
+        cancellable = model.$captureState.sink { [weak self] state in
+            self?.statusMenuItem?.title = Self.statusTitle(for: state)
+        }
+    }
 
     func install() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -25,8 +38,13 @@ final class MenuBarController: NSObject {
 
     private func makeMenu() -> NSMenu {
         let menu = NSMenu(title: "Said")
-        let status = NSMenuItem(title: "Ready locally", action: nil, keyEquivalent: "")
+        let status = NSMenuItem(
+            title: Self.statusTitle(for: model?.captureState ?? .idle),
+            action: nil,
+            keyEquivalent: ""
+        )
         status.isEnabled = false
+        statusMenuItem = status
         menu.addItem(status)
         menu.addItem(.separator())
         menu.addItem(item("Show Caption Preview", action: #selector(showPreview)))
@@ -52,4 +70,16 @@ final class MenuBarController: NSObject {
     @objc private func openSettings() { onOpenSettings?() }
     @objc private func openPrivacy() { onOpenPrivacy?() }
     @objc private func quit() { NSApp.terminate(nil) }
+
+    private static func statusTitle(for state: CaptureState) -> String {
+        switch state {
+        case .idle: "Ready locally"
+        case .preparing: "Loading speech model…"
+        case .starting: "Starting audio capture…"
+        case .capturing: "Listening locally"
+        case .recovering: "Restarting audio capture…"
+        case .stopping: "Stopping…"
+        case .failed: "Said needs attention"
+        }
+    }
 }

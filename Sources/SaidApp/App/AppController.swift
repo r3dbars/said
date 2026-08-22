@@ -4,6 +4,7 @@ import AppKit
 final class AppController {
     private let model: AppModel
     private let captionPanel: CaptionPanelController
+    private let audioCapture: AudioCaptureCoordinator
     private let setupWindow: SetupWindowController
     private let settingsWindow: SettingsWindowController
     private let menuBar: MenuBarController
@@ -12,9 +13,16 @@ final class AppController {
         self.model = model
         let panel = CaptionPanelController(model: model)
         captionPanel = panel
-        setupWindow = SetupWindowController(onPreview: { [weak panel] in panel?.showPreview() })
+        let capture = AudioCaptureCoordinator(model: model)
+        audioCapture = capture
+        capture.onCaption = { [weak panel] snapshot in panel?.show(snapshot) }
+        setupWindow = SetupWindowController(
+            model: model,
+            onPreview: { [weak panel] in panel?.showPreview() },
+            onStartAudio: { [weak capture] in capture?.start() }
+        )
         settingsWindow = SettingsWindowController(model: model)
-        menuBar = MenuBarController()
+        menuBar = MenuBarController(model: model)
 
         menuBar.onMoveCaptions = { [weak captionPanel] in captionPanel?.beginPlacement() }
         menuBar.onShowPreview = { [weak captionPanel] in captionPanel?.showPreview() }
@@ -28,9 +36,13 @@ final class AppController {
     func start() {
         menuBar.install()
         setupWindow.show()
+        if AppPaths.availableModelURL != nil {
+            audioCapture.start()
+        }
     }
 
     func stop() {
+        audioCapture.stop()
         captionPanel.clearAndHide()
         menuBar.remove()
     }

@@ -53,6 +53,7 @@ account, recording, or permanent transcript.
 | Hardware | Apple silicon, M1 or newer |
 | Language | English only |
 | Audio | Mac system audio only |
+| Capture API | Core Audio process tap; System Audio Recording Only permission |
 | Microphone / pixels | Never captured |
 | Model | Parakeet Unified EN 0.6B, Q8_0 first |
 | Runtime | `transcribe.cpp` Swift bindings with Metal |
@@ -158,7 +159,7 @@ get one bounded automatic recovery attempt. Never fail over silently.
 ## Architecture
 
 Use Swift 6, SwiftUI for setup/settings/caption content, AppKit for lifecycle,
-menu bar and `NSPanel`, ScreenCaptureKit audio-only capture, native
+menu bar and `NSPanel`, a private Core Audio process tap, native
 AVFoundation/Accelerate conversion, pinned `TranscribeCpp`, Metal, CryptoKit,
 content-free OSLog, and `SMAppService`.
 
@@ -166,7 +167,7 @@ Pipeline:
 
 ```text
 Mac app audio
-  -> audio-only ScreenCaptureKit stream
+  -> private Core Audio process tap
   -> owned 48 kHz stereo AVAudioPCMBuffer
   -> serial normalization queue
   -> 16 kHz mono Float32
@@ -189,24 +190,35 @@ and ASR enums. Do not derive lifecycle from unrelated booleans.
 
 ## Capture requirements
 
-Adapt, do not wholesale copy, the hardened path in
-`r3dbars/transcripted/Sources/TranscriptedCore/Audio/SCKAudioCapture.swift` and
-its tests. Also inspect historical commits `1b3e133f...` and `750b7d4d...`.
+Adapt, do not wholesale copy, the proven Core Audio process-tap path in
+`r3dbars/transcripted/Sources/TranscriptedCore/Audio/SystemAudioCapture.swift`,
+`SystemAudioProcessTap.swift`, and their supporting utilities.
 
-Use `SCContentFilter(display:excludingWindows:)`, `capturesAudio = true`,
-`excludesCurrentProcessAudio = true`, 48 kHz, two channels, and a minimal 2x2
-configuration required by the API. Attach only `.audio`; never `.screen`. Own
-buffer memory before asynchronous dispatch. Do not claim capture until a valid
-nonempty buffer arrives within five seconds.
+Use a private `CATapDescription` global stereo tap that excludes Said's own
+process, feed it through a private aggregate device, and request only
+`NSAudioCaptureUsageDescription`. This must place Said under macOS's **System
+Audio Recording Only** permission category. Never include a screen-capture
+usage description or create a ScreenCaptureKit stream. Own buffer memory before
+asynchronous dispatch. Do not claim capture until a valid nonempty buffer
+arrives within five seconds.
 
-Port generation/epoch ownership, phases, callback timeouts, long initial
-permission timeout, one recovery claim, 3–5 second post-first-buffer watchdog,
-stream identity, stale callback invalidation, sleep/wake, and display
-reacquisition. Never loop recovery forever or treat amplitude silence as a
-stall.
+Port generation/epoch ownership, explicit phases, one recovery claim, and a
+3–5 second post-first-buffer watchdog. Invalidate stale callbacks, reconstruct
+the tap after an output-device change, and never loop recovery forever or treat
+amplitude silence as a stall.
 
 `Info.plist` includes system/audio capture explanations and deliberately omits
-`NSMicrophoneUsageDescription`.
+both `NSMicrophoneUsageDescription` and `NSScreenCaptureUsageDescription`.
+
+### Owner correction — August 22, 2026
+
+The initial build used an audio-output-only ScreenCaptureKit stream, but macOS
+listed Said under **Screen & System Audio Recording** on the owner's machine.
+The owner required Said to appear under **System Audio Recording Only**. The
+capture backend was therefore changed to Core Audio process taps. This explicit
+owner decision supersedes the earlier ScreenCaptureKit lock in the original
+draft PRD while preserving the stronger invariant: Said has no screen-pixel
+capture path at all.
 
 ## Audio and ASR requirements
 

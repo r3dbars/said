@@ -10,10 +10,21 @@ does not upload audio or captions, and does not save a transcript.
 
 ## Status
 
-Said's PR 0 path now streams Parakeet Unified EN 0.6B Q8_0 through pinned
-`transcribe.cpp` Swift bindings on Metal. The reproducible spike passes on the
-available M5 Max; the required M1/16 GB baseline receipt is still outstanding.
-The app UI does not exist yet.
+Said now runs as a playable native menu-bar app. A private Core Audio process
+tap captures Mac playback under the **System Audio Recording Only** permission,
+normalizes it to 16 kHz mono in memory, and streams it through Parakeet Unified
+EN 0.6B Q8_0 using pinned `transcribe.cpp` Swift bindings on Metal. Captions
+appear in a floating two-line panel and are never persisted by Said.
+
+The end-to-end path is proven on the available M5 Max. The required physical
+M1/16 GB release receipt, production model installer, and signed/notarized
+distribution remain outstanding.
+
+To build, package, and launch the current local alpha:
+
+```bash
+./script/build_and_run.sh --verify
+```
 
 To reproduce the available-host proof:
 

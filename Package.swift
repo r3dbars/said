@@ -7,6 +7,8 @@ let package = Package(
     platforms: [.macOS(.v26)],
     products: [
         .library(name: "SaidCore", targets: ["SaidCore"]),
+        .library(name: "SaidCapture", targets: ["SaidCapture"]),
+        .library(name: "SaidASR", targets: ["SaidASR"]),
         .executable(name: "Said", targets: ["SaidApp"]),
         .executable(name: "said-model-spike", targets: ["SaidModelSpike"]),
     ],
@@ -15,15 +17,27 @@ let package = Package(
     ],
     targets: [
         .target(name: "SaidCore"),
+        .target(name: "SaidCapture", dependencies: ["SaidCore"]),
+        .target(
+            name: "SaidASR",
+            dependencies: [
+                "SaidCore",
+                .product(name: "TranscribeCpp", package: "transcribe-cpp"),
+            ]
+        ),
         .executableTarget(
             name: "SaidApp",
-            dependencies: ["SaidCore"]
+            dependencies: ["SaidCore", "SaidCapture", "SaidASR"]
         ),
         .executableTarget(
             name: "SaidModelSpike",
             dependencies: [
                 .product(name: "TranscribeCpp", package: "transcribe-cpp"),
             ]
+        ),
+        .testTarget(
+            name: "SaidCaptureTests",
+            dependencies: ["SaidCapture", "SaidCore"]
         ),
     ]
 )
