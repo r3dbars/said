@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/said-icon.png" width="152" alt="Said app icon">
+  <img src="docs/assets/said-icon.png" width="132" alt="Said app icon">
 </p>
 
 <h1 align="center">Said</h1>
@@ -7,13 +7,18 @@
 <p align="center"><strong>Live captions for anything your Mac plays.</strong></p>
 
 <p align="center">
-  Said turns Mac audio into calm, readable English captions entirely on-device.<br>
-  No bot. No account. No transcript history.
+  One private caption layer for calls, videos, podcasts, webinars, and voice messages.<br>
+  No meeting bot. No account. No transcript history.
 </p>
 
 <p align="center">
-  <a href="https://github.com/r3dbars/said/releases/download/v0.1.0-alpha/Said-0.1.0-alpha.dmg"><strong>Download Said 0.1.0 Alpha</strong></a><br>
-  <sub>Apple silicon · macOS 26+ · Control-click Open once (alpha is not yet notarized)</sub>
+  <a href="https://github.com/r3dbars/said/releases/download/v0.1.0-alpha/Said-0.1.0-alpha.dmg"><strong>Download Said 0.1.0 Alpha</strong></a>
+  ·
+  <a href="#build-from-source"><strong>Build from source</strong></a>
+</p>
+
+<p align="center">
+  <sub>Apple silicon · macOS 26+ · English · 4.5 MB app + one-time 731 MB model download</sub>
 </p>
 
 <p align="center">
@@ -26,115 +31,190 @@
 
 <p align="center"><em>Hear. Read. Gone.</em></p>
 
+<p align="center">
+  <img src="docs/assets/said-live-captions.png" width="960" alt="Said showing live yellow captions over a podcast playing on a Mac">
+</p>
+
+<p align="center"><sub>Real Said captions from a podcast playing in another app.</sub></p>
+
 ---
 
-## The whole product
+## Sometimes you need subtitles—not a meeting platform
 
-1. Open Said.
-2. Allow **System Audio Recording Only** and download the verified local model once.
-3. Turn on the **Said** switch for a call, video, podcast, voice message, or webinar.
-4. Read the persistent floating two-line caption strip.
-5. Turn captions off when you are done. The window and captions are gone.
+The audio is already playing on your Mac, but the words are still hard to
+follow. Maybe the video has no captions. Maybe the call's captions are poor.
+Maybe the room is noisy, the volume needs to stay low, or spoken English is
+simply easier to understand when you can read it too.
 
-Said lives in the menu bar, stays above full-screen apps, and never steals keyboard focus. While the **Said** switch is on, its caption window stays exactly where you put it—even between speakers—so it behaves like a deliberate call mode instead of an all-day ambient utility. The one- or two-line reading block is optically centered inside the card. Captions still advance one complete row at a time, so your eyes have a stable place to return to while tentative words settle softly.
+Most workarounds ask you to change the moment: upload a recording, invite a bot,
+open a transcript product, or trust another service with the conversation.
 
-Hover over visible captions to reveal a compact left-aligned control bar. One `XS`–`XL` Caption Size control changes the text and window together through five balanced presets; Rounded, Sans, Serif, Mono, and Block fonts plus text color remain separate one-click choices, and you can drag the strip itself. When captions move into the upper half of a display, the toolbar flips below them so it stays out of the way. Move away and the controls collapse back to click-through captions. **Customize Captions…** keeps those controls available during silence. A compact **Said** header and teal-on native switch anchor the menu; a restrained status indicator directly below shows whether the local caption pipeline is listening, preparing, off, or needs attention. Switching Said off stops capture and clears the ephemeral caption surface.
+Said changes one thing instead: **the Mac gets captions.**
 
-## Why Said
+| 1. Turn Said on | 2. Play anything | 3. Read, then turn it off |
+| --- | --- | --- |
+| One switch in the menu bar. | A call, video, podcast, webinar, training, or voice message. | The caption window stays where you put it. Off clears the ephemeral words and closes the surface. |
 
-| | Said |
+No source picker. No meeting to name. No recording to clean up later.
+
+## One switch. One calm reading surface.
+
+<p align="center">
+  <img src="docs/assets/said-menu-compact-header.png" width="390" alt="Said menu with a compact on switch and Listening locally status">
+</p>
+
+When the switch is on, Said listens only to audio macOS makes available from
+other processes and keeps a fixed two-line caption surface visible—even during
+silence. When the switch is off, capture stops and the surface disappears.
+
+Captions are designed for reading in motion:
+
+- A fixed left edge gives your eyes a dependable place to return to.
+- Complete rows advance together instead of constantly reflowing old words.
+- Stable words stay stable; only the newest tentative suffix may soften and change.
+- The panel never takes keyboard focus and remains above full-screen apps.
+- Hover reveals one compact bar for moving captions, changing the unified
+  `XS`–`XL` scale, choosing Rounded/Sans/Serif/Mono/Block, and selecting white,
+  warm yellow, or cyan text.
+
+<p align="center">
+  <img src="docs/assets/caption-optically-centered.jpeg" width="520" alt="Said caption surface with its compact hover customization bar">
+</p>
+
+## Local is not a setting. It is the product.
+
+Said needs continuous access to private audio to be useful. That is exactly the
+kind of job that should not require a server.
+
+<p align="center">
+  <img src="docs/assets/said-privacy-pipeline.svg" width="100%" alt="Mac playback is processed in memory by an on-device model and shown as ephemeral captions">
+</p>
+
+After one verified model download, speech recognition runs locally with
+Parakeet Unified EN 0.6B Q8_0 on Metal.
+
+| Said can observe | Said deliberately does not collect |
 | --- | --- |
-| **Audio source** | Sound playing through your Mac |
-| **Recognition** | Parakeet Unified EN 0.6B Q8_0 on Metal |
-| **Network after setup** | Not required for captioning |
-| **Microphone** | Never requested or captured |
-| **Screen pixels** | Never captured |
-| **Audio recordings** | Never created |
-| **Transcript history** | Never created |
-| **Account or bot** | None |
+| Audio playing through the supported Mac system-audio path while Said is on | Microphone input |
+| Temporary PCM and caption text in process memory | Screen pixels, camera, keyboard, clipboard, files, browser history, or window titles |
+| Caption appearance and placement preferences | Audio recordings or transcript history |
+| Model/update network requests | Accounts, analytics, cloud inference, or remote caption logs |
 
-This is not a meeting platform or an AI workspace. Said does one job: it lets you read what your Mac is already playing.
+Said persists the verified speech model, its content-free installation receipt,
+and ordinary preferences. It does not claim cryptographic memory erasure; audio
+and caption buffers are released when the stream ends or the app quits.
 
-## Try the local alpha
+Read the complete [privacy contract](docs/privacy.md),
+[threat model](docs/threat-model.md), and
+[verification matrix](docs/reliability-matrix.md).
 
-Said currently supports Apple-silicon Macs running macOS 26 or later. The local speech model is a one-time download of approximately 731 MB.
+## Install the alpha
 
-```bash
-git clone --recurse-submodules https://github.com/r3dbars/said.git
-cd said
-./scripts/bootstrap.sh
-./scripts/build-and-run.sh --verify
-```
+Said currently requires an Apple-silicon Mac running macOS 26 or later.
 
-After the first build, reopen that exact bundle without replacing its code-signing identity:
-
-```bash
-./scripts/build-and-run.sh --launch-only
-```
-
-On first launch, allow Said under:
-
-> System Settings → Privacy & Security → System Audio Recording Only
-
-The app installs its pinned model through the setup window, then starts captioning automatically when the **Said** switch is on. Local development builds are ad-hoc signed unless you explicitly provide a trusted development identity; macOS may therefore ask for permission again after rebuilding. Ordinary playtesting and the Codex Run action reuse the existing bundle with `--launch-only`, so reopening Said does not unnecessarily change the identity associated with System Audio permission.
+1. [Download **Said-0.1.0-alpha.dmg**](https://github.com/r3dbars/said/releases/download/v0.1.0-alpha/Said-0.1.0-alpha.dmg).
+2. Open the DMG and drag **Said** into **Applications**.
+3. Control-click Said, choose **Open**, then confirm.
+4. Allow **System Audio Recording Only** when macOS asks.
+5. Let Said download and verify its English speech model once.
+6. Play something with spoken English and turn the Said switch on.
 
 > [!IMPORTANT]
-> Said is a playable alpha, not yet a notarized public release. Do not redistribute the local alpha as a finished release.
+> This is a playable, ad-hoc-signed alpha—not yet a notarized public release.
+> The Control-click → Open step is required because no Developer ID certificate
+> is configured yet. Do not redistribute this alpha as a finished release.
 
-## Privacy is the architecture
+The release page publishes the DMG checksum and build commit:
+[Said 0.1.0 Alpha](https://github.com/r3dbars/said/releases/tag/v0.1.0-alpha).
 
-```text
-Mac playback
-    ↓
-Private Core Audio process tap
-    ↓
-48 kHz stereo → 16 kHz mono Float32, in memory
-    ↓
-Parakeet Unified streaming inference on Metal
-    ↓
-Stable prefix + tentative suffix
-    ↓
-Two-line caption panel
-    ↓
-Released when the stream ends or Said quits
-```
+## What Said is—and is not
 
-Said may persist only the verified speech model, its content-free installation receipt, and ordinary app preferences. It does not write PCM, audio files, captions, or transcripts. Operational logs are allowlisted and contain counts, states, durations, and safe error codes—not spoken content.
+| Said is | Said is not |
+| --- | --- |
+| A native caption layer for Mac system audio | A meeting recorder or transcript archive |
+| English-only in V1 | Translation or multilingual recognition |
+| One opinionated local model | A model picker or cloud fallback router |
+| A deliberate on/off mode | An ambient surveillance process |
+| A floating reading surface | A dashboard, chat box, or AI workspace |
 
-Read the complete [privacy contract](docs/privacy.md) and [threat model](docs/threat-model.md).
+There is intentionally no microphone capture, rewind, save, export, search,
+speaker labeling, summary, action item, calendar integration, subscription,
+analytics SDK, or account system.
+
+Every proposed feature has to improve one loop: **play audio, read captions.**
 
 ## Native all the way down
 
-Said is a Swift 6 app with no browser shell, Python service, local web server, model daemon, or cloud recognizer.
+Said is a Swift 6 application with no browser shell, Python service, local HTTP
+server, model daemon, or cloud recognizer.
+
+```text
+Mac process audio
+    ↓
+Core Audio process tap (Said excludes its own audio)
+    ↓
+48 kHz stereo → 16 kHz mono Float32, bounded in memory
+    ↓
+Parakeet Unified EN 0.6B Q8_0 through pinned transcribe.cpp
+    ↓
+Metal-backed stable-prefix streaming
+    ↓
+AppKit NSPanel + SwiftUI caption content
+```
+
+The code keeps capture, normalization, recognition, model management, caption
+state, and UI independently testable:
 
 ```text
 SaidApp       AppKit lifecycle, menu bar, setup, settings, caption panel
-SaidCapture   Core Audio process tap, normalization, bounded PCM pipeline
+SaidCapture   Core Audio capture, normalization, bounded PCM pipeline
 SaidASR       Parakeet streaming actor and transcribe.cpp adapter
 SaidModel     Resumable download, SHA-256 verification, atomic install
 SaidCore      Pure caption, state, diagnostics, and buffer behavior
 ```
 
-The runtime and model are pinned by immutable revisions, exact sizes, and SHA-256 hashes. See [architecture](docs/architecture.md), [model provenance](docs/model-provenance.md), and the original [product requirements](docs/PRD.md).
+Dependencies and model artifacts are pinned by immutable revision, exact byte
+count, and SHA-256. Start with the [architecture](docs/architecture.md),
+[model provenance](docs/model-provenance.md), and
+[product requirements](docs/PRD.md).
 
-## Build and verify
+## Proof, not promises
 
-The repository keeps model-dependent hardware checks explicit while ordinary CI remains deterministic and does not download the 731 MB model.
+The repository separates deterministic CI from tests that require a physical
+Mac, real system audio, or the 731 MB model.
+
+Current evidence includes:
+
+- Real Mac system audio reaching the local Parakeet caption pipeline.
+- Metal model loading and true streaming.
+- 45 deterministic tests plus the static privacy gate.
+- Regression coverage for caption stability, bounded PCM queues, capture
+  recovery, model verification, and resumable downloads.
+- GitHub Actions building and verifying an arm64 app without bundling the model.
+- Content-free performance, privacy, and release receipts under `Artifacts/Receipts`.
+
+The [release checklist](docs/release-checklist.md) clearly separates what is
+proven from what still blocks a finished public release: physical M1/16 GB
+performance, long-session receipts, final model-license review, Developer ID
+signing, notarization, and a clean-machine install.
+
+<details>
+<summary><strong>Verification commands</strong></summary>
 
 ```bash
-# Deterministic tests and privacy contract
+# Deterministic tests and static privacy contract
 ./scripts/run-tests.sh
 
 # Real model streaming
 ./scripts/streaming-smoke.sh
 
-# Real Mac playback → local model → caption pipeline
+# Real Mac playback → local model → captions
 ./scripts/capture-smoke.sh
 
-# Installed model + live captions with per-process network observation
+# Installed model + per-process network observation
 ./scripts/offline-smoke.sh
 
-# Known fixture + quit + log/app-storage retention inspection
+# Known marker + quit + retained-content inspection
 ./scripts/post-quit-privacy-smoke.sh
 
 # Long-session stability and bounded memory
@@ -145,44 +225,35 @@ The repository keeps model-dependent hardware checks explicit while ordinary CI 
 ./scripts/privacy-smoke.sh
 ```
 
-Current evidence on the development Mac:
+</details>
 
-- Real system audio reaches the local Parakeet caption pipeline.
-- Metal model loading and true streaming are proven.
-- 41 deterministic tests and the static privacy gate pass.
-- Caption state, PCM queues, capture recovery, model verification, and resumable downloads have regression coverage.
-- GitHub Actions builds and verifies an arm64 local app bundle without bundling the speech model.
+## Build from source
 
-The [release checklist](docs/release-checklist.md) tracks the remaining physical M1/16 GB, long-session, licensing, Developer ID, notarization, and clean-machine gates.
+You need Xcode with the macOS 26 SDK on an Apple-silicon Mac.
 
-## Deliberately not in Said
+```bash
+git clone --recurse-submodules https://github.com/r3dbars/said.git
+cd said
+./scripts/bootstrap.sh
+./scripts/build-and-run.sh --verify
+```
 
-- Microphone capture
-- Saved transcripts or recordings
-- Rewind, export, search, or session management
-- Translation or additional languages
-- Speaker labels, summaries, or action items
-- Accounts, analytics, subscriptions, or team administration
-- Model selection or fallback recognizers
-- Cloud inference
+After the first build, reopen the same bundle without replacing its local
+code-signing identity:
 
-Every feature has to improve one loop: **play audio, read captions**.
+```bash
+./scripts/build-and-run.sh --launch-only
+```
 
-## Repository guide
-
-| Path | Purpose |
-| --- | --- |
-| [`Sources/`](Sources/) | Native application and independently testable modules |
-| [`Tests/`](Tests/) | Deterministic model, capture, caption, and privacy-adjacent tests |
-| [`scripts/`](scripts/) | Bootstrap, build, smoke, soak, privacy, and release tooling |
-| [`docs/PRD.md`](docs/PRD.md) | Locked product contract and acceptance bar |
-| [`docs/model-spike.md`](docs/model-spike.md) | Streaming benchmark and runtime evidence |
-| [`docs/reliability-matrix.md`](docs/reliability-matrix.md) | Proven, partial, and open V1 verification gates |
-| [`docs/release-checklist.md`](docs/release-checklist.md) | Local-alpha and public-release gates |
+Local development builds are ad-hoc signed unless you provide a trusted signing
+identity. Rebuilding an ad-hoc bundle can make macOS ask for System Audio
+permission again.
 
 ## Contributing
 
-Issues and focused pull requests are welcome. Read the full [contributor guide](CONTRIBUTING.md) before changing capture, inference, privacy, or product scope.
+Focused issues and pull requests are welcome. Please read
+[CONTRIBUTING.md](CONTRIBUTING.md) before changing capture, inference, privacy,
+or product scope.
 
 Before opening a pull request:
 
@@ -191,10 +262,27 @@ Before opening a pull request:
 ./scripts/privacy-smoke.sh
 ```
 
-Hardware-only behavior must include a hardware receipt; a unit test is not proof of a macOS permission, capture, Metal, latency, or thermal claim.
+Hardware-only behavior needs a hardware receipt. A unit test is not proof of a
+macOS permission, Core Audio capture, Metal latency, power, or thermal claim.
+
+## Repository guide
+
+| Path | Purpose |
+| --- | --- |
+| [`Sources/`](Sources/) | Native application and independently testable modules |
+| [`Tests/`](Tests/) | Deterministic caption, capture, model, and privacy-adjacent tests |
+| [`scripts/`](scripts/) | Bootstrap, build, smoke, soak, privacy, and release tooling |
+| [`docs/PRD.md`](docs/PRD.md) | Locked product contract and acceptance bar |
+| [`docs/model-spike.md`](docs/model-spike.md) | Streaming benchmark and runtime evidence |
+| [`docs/reliability-matrix.md`](docs/reliability-matrix.md) | Proven, partial, and open verification gates |
+| [`docs/release-checklist.md`](docs/release-checklist.md) | Alpha and public-release requirements |
 
 ## License
 
-Said application code is available under the [MIT License](LICENSE). Runtime and model artifacts retain their own licenses and notices; see [third-party licenses](THIRD_PARTY_LICENSES.md) and [model provenance](docs/model-provenance.md).
+Said application code is available under the [MIT License](LICENSE). Runtime
+and model artifacts retain their own licenses and notices; see
+[third-party licenses](THIRD_PARTY_LICENSES.md) and
+[model provenance](docs/model-provenance.md).
 
-Public distribution remains blocked until the pinned model/conversion license chain receives explicit human review.
+Public distribution remains blocked until the pinned model/conversion license
+chain receives explicit human review.
