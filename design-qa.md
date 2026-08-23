@@ -7,6 +7,9 @@
 - Current native implementation captures: `/private/tmp/said-unified-scale-medium.png` and `/private/tmp/said-unified-scale-xl.png`.
 - Final Block font capture: [`docs/assets/caption-block-font.jpeg`](docs/assets/caption-block-font.jpeg).
 - Latest same-input visual comparison: [`docs/assets/caption-unified-scale-comparison.png`](docs/assets/caption-unified-scale-comparison.png). The prior separate controls are above and the unified native Said control is below.
+- Menu-bar source visual truth: `/var/folders/rm/99g7pxgn6d72plzypdcy18j40000gn/T/TemporaryItems/NSIRD_screencaptureui_lKDnwc/Screenshot 2026-08-23 at 6.28.47 AM.png` (504 × 806 px).
+- Rendered native Said menu header and status: [`docs/assets/said-menu-header.png`](docs/assets/said-menu-header.png).
+- Focused source/implementation comparison: [`docs/assets/said-menu-premium-comparison.png`](docs/assets/said-menu-premium-comparison.png). Klack's upper menu hierarchy is on the left; Said's real `NSSwitch`, header, and live-status components are on the right.
 - Verified states: all five caption-size presets, including Medium at 34 pt / 760 pt wide and Extra Large at 56 pt / 1,280 pt wide.
 
 The screenshot is the visual reference for a compact, neutral, single-row dark
@@ -24,6 +27,9 @@ without copying unrelated document actions.
 | Geometry | The caption card and toolbar remain separate surfaces. At the top of the display the toolbar renders below the captions; lower placement renders it above. Showing, hiding, or flipping the toolbar now preserves the caption card as the fixed global anchor. |
 | Surface rendering | The square material/shadow compositing regions visible in the supplied screenshots are gone. Both surfaces retain their rounded charcoal fill and subtle highlight border without a rectangular haze. |
 | Accessibility | The native tree exposes one Caption Size control, font, each color, and Done. The scale control announces its named size, point size, and complete five-step cycle. |
+| Menu hierarchy | A bold Said header and large native switch create one immediate on/off decision. A separate, quieter operational row uses a small semantic indicator and short status copy; actions remain ordinary native menu commands below it. |
+| Menu restraint | Said borrows the reference's clear product-name/switch header, dark native material, separators, and muted hierarchy without importing Klack's sound, theme, or decorative controls. The only status color is a small system semantic dot. |
+| Menu trust | Version, Settings, Privacy, and Quit remain visible and conventionally ordered. The switch changes the existing persisted caption state; it is not a visual-only control. |
 
 ## Interaction evidence
 
@@ -40,6 +46,7 @@ without copying unrelated document actions.
 - The enabled-session surface was exercised in the running native app. It appears before speech with quiet status copy, remains the same fixed two-line geometry as live captions arrive, and retains hover customization while empty.
 - Normal caption mode remains click-through after the hover grace period.
 - Forty-five deterministic tests and the privacy smoke pass.
+- The native menu preview path rendered the actual header and status view classes. On/off synchronization remains driven by `AppModel`, so menu state, caption visibility, capture state, tooltip, and filled/unfilled status icon cannot drift into separate preference values.
 
 ## Iteration history
 
@@ -58,6 +65,10 @@ without copying unrelated document actions.
 13. Added Mono and Block to the font cycle, then tightened their treatments after native review exposed clipping in the first expanded Block draft.
 14. The final Block preview preserves the complete caption at XS while remaining visibly heavier than Sans.
 15. Replaced silence-driven fading with a persistent Captions On surface and a quiet ready state; the latest caption now remains anchored until new speech or an explicit Captions Off action.
+16. Replaced the checked command item with a large native switch in a bold Said header, following the supplied Klack interaction reference.
+17. Added a restrained semantic status row: green while listening, orange while preparing, gray while off, and red only when attention is required.
+18. Added a muted version row and retained standard macOS commands and separators, preserving a compact 264-point menu rather than introducing a custom popover or dashboard.
+19. The final focused source/implementation comparison found no P0, P1, or P2 defect: hierarchy, native control choice, spacing, contrast, and interaction state are coherent with the reference while staying recognizably Said.
 
 ## Final result
 

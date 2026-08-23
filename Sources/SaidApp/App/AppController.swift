@@ -100,6 +100,8 @@ final class AppController {
             captionPanel.showHoverControlsPreview()
         } else if ProcessInfo.processInfo.arguments.contains("--preview-caption-controls") {
             captionPanel.beginPlacement()
+        } else if ProcessInfo.processInfo.arguments.contains("--preview-menu") {
+            return
         } else {
             modelLifecycle.prepareForLaunch()
         }

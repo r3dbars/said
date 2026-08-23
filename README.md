@@ -27,13 +27,13 @@
 
 1. Open Said.
 2. Allow **System Audio Recording Only** and download the verified local model once.
-3. Turn **Captions On** for a call, video, podcast, voice message, or webinar.
+3. Turn on the **Said** switch for a call, video, podcast, voice message, or webinar.
 4. Read the persistent floating two-line caption strip.
 5. Turn captions off when you are done. The window and captions are gone.
 
-Said lives in the menu bar, stays above full-screen apps, and never steals keyboard focus. While **Captions On** is checked, its caption window stays exactly where you put it—even between speakers—so it behaves like a deliberate call mode instead of an all-day ambient utility. Captions grow along the lower row, then advance upward one complete row at a time, so your eyes always have a stable place to return to while tentative words settle softly.
+Said lives in the menu bar, stays above full-screen apps, and never steals keyboard focus. While the **Said** switch is on, its caption window stays exactly where you put it—even between speakers—so it behaves like a deliberate call mode instead of an all-day ambient utility. Captions grow along the lower row, then advance upward one complete row at a time, so your eyes always have a stable place to return to while tentative words settle softly.
 
-Hover over visible captions to reveal a compact left-aligned control bar. One `XS`–`XL` Caption Size control changes the text and window together through five balanced presets; Rounded, Sans, Serif, Mono, and Block fonts plus text color remain separate one-click choices, and you can drag the strip itself. When captions move into the upper half of a display, the toolbar flips below them so it stays out of the way. Move away and the controls collapse back to click-through captions. **Customize Captions…** keeps those controls available during silence. The checked **Captions On** menu item, status copy, and filled menu-bar icon make it clear when Said is listening; switching it off stops capture and clears the ephemeral caption surface.
+Hover over visible captions to reveal a compact left-aligned control bar. One `XS`–`XL` Caption Size control changes the text and window together through five balanced presets; Rounded, Sans, Serif, Mono, and Block fonts plus text color remain separate one-click choices, and you can drag the strip itself. When captions move into the upper half of a display, the toolbar flips below them so it stays out of the way. Move away and the controls collapse back to click-through captions. **Customize Captions…** keeps those controls available during silence. A bold **Said** header and native switch anchor the menu; a restrained status indicator directly below shows whether the local caption pipeline is listening, preparing, off, or needs attention. Switching Said off stops capture and clears the ephemeral caption surface.
 
 ## Why Said
 
@@ -71,7 +71,7 @@ On first launch, allow Said under:
 
 > System Settings → Privacy & Security → System Audio Recording Only
 
-The app installs its pinned model through the setup window, then starts captioning automatically when **Captions On** is enabled. Local development builds are ad-hoc signed unless you explicitly provide a trusted development identity; macOS may therefore ask for permission again after rebuilding. Ordinary playtesting and the Codex Run action reuse the existing bundle with `--launch-only`, so reopening Said does not unnecessarily change the identity associated with System Audio permission.
+The app installs its pinned model through the setup window, then starts captioning automatically when the **Said** switch is on. Local development builds are ad-hoc signed unless you explicitly provide a trusted development identity; macOS may therefore ask for permission again after rebuilding. Ordinary playtesting and the Codex Run action reuse the existing bundle with `--launch-only`, so reopening Said does not unnecessarily change the identity associated with System Audio permission.
 
 > [!IMPORTANT]
 > Said is a playable alpha, not yet a notarized public release. Do not redistribute the local alpha as a finished release.
