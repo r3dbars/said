@@ -39,15 +39,16 @@
 
 ---
 
-## Sometimes you need subtitles—not a meeting platform
+## Why Said exists
 
 The audio is already playing on your Mac, but the words are still hard to
 follow. Maybe the video has no captions. Maybe the call's captions are poor.
 Maybe the room is noisy, the volume needs to stay low, or spoken English is
-simply easier to understand when you can read it too.
+easier to understand when you can read it as well.
 
-Most workarounds ask you to change the moment: upload a recording, invite a bot,
-open a transcript product, or trust another service with the conversation.
+If the app does not provide good captions, the usual options are to upload a
+recording, invite a meeting bot, or use a separate transcript service. That is
+a lot of machinery for someone who just needs to read what is playing.
 
 Said changes one thing instead: **the Mac gets captions.**
 
@@ -57,14 +58,14 @@ Said changes one thing instead: **the Mac gets captions.**
 
 No source picker. No meeting to name. No recording to clean up later.
 
-## One switch. One calm reading surface.
+## How Said behaves
 
 <p align="center">
   <img src="docs/assets/said-menu-compact-header.png" width="390" alt="Said menu with a compact on switch and Listening locally status">
 </p>
 
 When the switch is on, Said listens only to audio macOS makes available from
-other processes and keeps a fixed two-line caption surface visible—even during
+other processes and keeps a fixed two-line caption surface visible, even during
 silence. When the switch is off, capture stops and the surface disappears.
 
 Captions are designed for reading in motion:
@@ -81,10 +82,11 @@ Captions are designed for reading in motion:
   <img src="docs/assets/caption-optically-centered.jpeg" width="520" alt="Said caption surface with its compact hover customization bar">
 </p>
 
-## Local is not a setting. It is the product.
+## Why recognition stays on the Mac
 
-Said needs continuous access to private audio to be useful. That is exactly the
-kind of job that should not require a server.
+Live captions require a stream of whatever you are hearing. Said keeps that
+stream on the Mac instead of sending calls, videos, and voice messages to a
+transcription server.
 
 <p align="center">
   <img src="docs/assets/said-privacy-pipeline.svg" width="100%" alt="Mac playback is processed in memory by an on-device model and shown as ephemeral captions">
@@ -93,7 +95,7 @@ kind of job that should not require a server.
 After one verified model download, speech recognition runs locally with
 Parakeet Unified EN 0.6B Q8_0 on Metal.
 
-| Said can observe | Said deliberately does not collect |
+| Said can observe | Said does not collect |
 | --- | --- |
 | Audio playing through the supported Mac system-audio path while Said is on | Microphone input |
 | Temporary PCM and caption text in process memory | Screen pixels, camera, keyboard, clipboard, files, browser history, or window titles |
@@ -120,14 +122,14 @@ Said currently requires an Apple-silicon Mac running macOS 26 or later.
 6. Play something with spoken English and turn the Said switch on.
 
 > [!IMPORTANT]
-> This is a playable, ad-hoc-signed alpha—not yet a notarized public release.
+> This is a playable, ad-hoc-signed alpha. It is not yet a notarized public release.
 > The Control-click → Open step is required because no Developer ID certificate
 > is configured yet. Do not redistribute this alpha as a finished release.
 
 The release page publishes the DMG checksum and build commit:
 [Said 0.1.0 Alpha](https://github.com/r3dbars/said/releases/tag/v0.1.0-alpha).
 
-## What Said is—and is not
+## Scope
 
 | Said is | Said is not |
 | --- | --- |
@@ -143,7 +145,7 @@ analytics SDK, or account system.
 
 Every proposed feature has to improve one loop: **play audio, read captions.**
 
-## Native all the way down
+## Implementation
 
 Said is a Swift 6 application with no browser shell, Python service, local HTTP
 server, model daemon, or cloud recognizer.
@@ -178,12 +180,12 @@ count, and SHA-256. Start with the [architecture](docs/architecture.md),
 [model provenance](docs/model-provenance.md), and
 [product requirements](docs/PRD.md).
 
-## Proof, not promises
+## Verification
 
 The repository separates deterministic CI from tests that require a physical
 Mac, real system audio, or the 731 MB model.
 
-Current evidence includes:
+Verified today:
 
 - Real Mac system audio reaching the local Parakeet caption pipeline.
 - Metal model loading and true streaming.
