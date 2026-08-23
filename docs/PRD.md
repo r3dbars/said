@@ -99,7 +99,8 @@ downloads resume safely. Denied permission offers System Settings and Retry.
 ### Later launches
 
 Launch as a menu-bar utility, validate the model, and start capture when the
-saved Captions On toggle is enabled. Remain hidden until speech produces text.
+saved Captions On toggle is enabled. Keep the caption panel visible for the
+entire enabled session, including silence between speakers.
 
 ### Menu
 
@@ -112,7 +113,8 @@ saved Captions On toggle is enabled. Remain hidden until speech produces text.
 
 Turning captions off immediately hides the panel, stops system-audio capture,
 and clears ephemeral caption state. Turning captions on restarts the existing
-local pipeline. The off state persists across launches and must be unmistakable:
+local pipeline and presents the caption panel immediately when the model is
+ready. The off state persists across launches and must be unmistakable:
 the status row reads **Captions are off**, the toggle is unchecked, and the
 menu-bar icon uses its unfilled treatment.
 
@@ -151,8 +153,12 @@ changes are one-click cycles; color swatches are direct one-click choices.
 Tentative text uses the selected color at reduced opacity rather than a different
 semantic hue. All choices persist as ordinary app settings.
 
-Show on first text. Hold 1.8 seconds after final revision, then fade over about
-180 ms; cancel a fade immediately when new text arrives. Respect Reduce Motion.
+While Captions On is enabled, keep the panel visible and preserve the latest
+caption between utterances. Before the first caption, show one quiet secondary
+status such as **Waiting for speech…**. Starting, recovery, and failure states
+may replace that placeholder with equally short human copy. Do not fade or hide
+the panel because of silence. Turning Captions Off is the only normal action
+that removes the surface and clears its ephemeral text.
 
 Pack caption words forward into two explicit, stable one-line rows. The active
 row grows along the bottom. When the next row begins, the completed lower row
@@ -399,6 +405,7 @@ long-run memory cannot be bounded.
 | 2026-08-22 | Make size labels cycle directly and flip the toolbar by vertical position | Removing arrow targets makes sizing behave like the compact reference toolbar. Keeping controls left-aligned reduces eye travel, while moving the toolbar below top-positioned captions prevents it from obstructing or being pushed off-screen. |
 | 2026-08-22 | Combine text and window size into one XS–XL Caption Size setting | Independent size controls allowed awkward combinations and added unnecessary choice. Five balanced presets preserve the useful physical range, keep line length consistent, and make the toolbar shorter and easier to understand. |
 | 2026-08-22 | Add Mono and Block caption faces | A five-style system-font set adds genuinely different reading treatments without introducing font installation, arbitrary pickers, or non-native dependencies. |
+| 2026-08-22 | Keep the caption panel visible while Captions On | Said is a deliberate call/video mode rather than an all-day ambient overlay. A persistent surface makes the on/off state predictable, preserves the reader's visual anchor between speakers, and disappears only when the user turns captions off. |
 
 ## Definition of done
 

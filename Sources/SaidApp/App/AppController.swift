@@ -32,14 +32,21 @@ final class AppController {
         settingsWindow = SettingsWindowController(model: model)
         menuBar = MenuBarController(model: model)
 
-        lifecycle.onReady = { [weak self, weak capture] url in
+        lifecycle.onReady = { [weak self, weak capture, weak panel] url in
             self?.activeModelURL = url
             guard self?.model.captionsEnabled == true else { return }
+            panel?.showReady()
             capture?.start(modelURL: url)
         }
         lifecycle.onNeedsSetup = { [weak setup] in setup?.show() }
         capture.onCaption = { [weak panel] snapshot in panel?.show(snapshot) }
-        capture.onCaptionReset = { [weak panel] in panel?.clearAndHide() }
+        capture.onCaptionReset = { [weak self, weak panel] in
+            guard self?.model.captionsEnabled == true else {
+                panel?.clearAndHide()
+                return
+            }
+            panel?.showReady()
+        }
         capture.onStarted = { [weak setup] in setup?.hide() }
         capture.onFailure = { [weak setup] _ in setup?.show() }
         menuBar.onMoveCaptions = { [weak captionPanel] in captionPanel?.beginPlacement() }
@@ -182,6 +189,7 @@ final class AppController {
 
             if enabled {
                 if self.model.modelState == .ready, let activeModelURL = self.activeModelURL {
+                    self.captionPanel.showReady()
                     self.audioCapture.start(modelURL: activeModelURL)
                 } else {
                     self.modelLifecycle.prepareForLaunch()

@@ -48,4 +48,46 @@ final class SaidStatusTextTests: XCTestCase {
         XCTAssertFalse(CaptureState.stopping.shouldResumeAfterSystemWake)
         XCTAssertFalse(CaptureState.failed(.stalled).shouldResumeAfterSystemWake)
     }
+
+    func testCaptionSurfaceStaysMeaningfulThroughoutEnabledSession() {
+        XCTAssertNil(
+            CaptionSurfaceText.placeholder(
+                model: .ready,
+                capture: .capturing,
+                captionsEnabled: false
+            )
+        )
+        XCTAssertEqual(
+            CaptionSurfaceText.placeholder(
+                model: .ready,
+                capture: .idle,
+                captionsEnabled: true
+            ),
+            "Captions are on"
+        )
+        XCTAssertEqual(
+            CaptionSurfaceText.placeholder(
+                model: .ready,
+                capture: .capturing,
+                captionsEnabled: true
+            ),
+            "Waiting for speech…"
+        )
+        XCTAssertEqual(
+            CaptionSurfaceText.placeholder(
+                model: .ready,
+                capture: .recovering(attempt: 1),
+                captionsEnabled: true
+            ),
+            "Reconnecting…"
+        )
+        XCTAssertEqual(
+            CaptionSurfaceText.placeholder(
+                model: .ready,
+                capture: .failed(.stalled),
+                captionsEnabled: true
+            ),
+            "Captions need attention"
+        )
+    }
 }

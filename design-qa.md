@@ -37,8 +37,9 @@ without copying unrelated document actions.
 - The saved normalized position is calculated from the caption card rather than the temporarily expanded toolbar window.
 - Caption scale, font, and color persist as ordinary local settings. Existing independent text/width preferences migrate to the nearest unified preset.
 - Mono and Block were exercised in the running native panel. Mono remains compact enough for the fixed two-line surface; Block uses the system sans face at black weight for a strong display treatment without clipping the XS preview.
+- The enabled-session surface was exercised in the running native app. It appears before speech with quiet status copy, remains the same fixed two-line geometry as live captions arrive, and retains hover customization while empty.
 - Normal caption mode remains click-through after the hover grace period.
-- Forty-four deterministic tests and the privacy smoke pass.
+- Forty-five deterministic tests and the privacy smoke pass.
 
 ## Iteration history
 
@@ -56,6 +57,7 @@ without copying unrelated document actions.
 12. The final native click-through and combined source/implementation comparison found no actionable P0, P1, or P2 defects.
 13. Added Mono and Block to the font cycle, then tightened their treatments after native review exposed clipping in the first expanded Block draft.
 14. The final Block preview preserves the complete caption at XS while remaining visibly heavier than Sans.
+15. Replaced silence-driven fading with a persistent Captions On surface and a quiet ready state; the latest caption now remains anchored until new speech or an explicit Captions Off action.
 
 ## Final result
 

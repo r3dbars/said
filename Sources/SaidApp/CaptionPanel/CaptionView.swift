@@ -73,11 +73,19 @@ struct CaptionView: View {
             if model.captionWindow.lines.count < 2 {
                 Spacer(minLength: 0)
             }
-            ForEach(model.captionWindow.lines) { line in
-                Text("\(Text(line.committed).foregroundStyle(captionColor))\(Text(line.tentative).foregroundStyle(captionColor.opacity(0.64)))")
+            if model.captionWindow.lines.isEmpty,
+               let placeholder = model.captionPlaceholderText {
+                Text(placeholder)
+                    .foregroundStyle(captionColor.opacity(0.46))
                     .lineLimit(1)
-                    .truncationMode(.head)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                ForEach(model.captionWindow.lines) { line in
+                    Text("\(Text(line.committed).foregroundStyle(captionColor))\(Text(line.tentative).foregroundStyle(captionColor.opacity(0.64)))")
+                        .lineLimit(1)
+                        .truncationMode(.head)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
         }
         .font(
@@ -90,7 +98,9 @@ struct CaptionView: View {
         .fontWidth(model.captionFontStyle.fontWidth)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(model.visibleCaptionText)
+        .accessibilityLabel(model.visibleCaptionText.isEmpty
+            ? model.captionPlaceholderText ?? ""
+            : model.visibleCaptionText)
     }
 
     private var scaleControl: some View {

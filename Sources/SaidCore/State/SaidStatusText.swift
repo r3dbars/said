@@ -33,3 +33,29 @@ public enum SaidStatusText {
         }
     }
 }
+
+public enum CaptionSurfaceText {
+    public static func placeholder(
+        model: ModelState,
+        capture: CaptureState,
+        captionsEnabled: Bool
+    ) -> String? {
+        guard captionsEnabled else { return nil }
+        guard case .ready = model else { return "Preparing captions…" }
+
+        switch capture {
+        case .idle:
+            return "Captions are on"
+        case .preparing, .starting:
+            return "Starting captions…"
+        case .capturing:
+            return "Waiting for speech…"
+        case .recovering:
+            return "Reconnecting…"
+        case .stopping:
+            return "Stopping captions…"
+        case .failed:
+            return "Captions need attention"
+        }
+    }
+}
