@@ -12,6 +12,11 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/r3dbars/said/releases/download/v0.1.0-alpha/Said-0.1.0-alpha.dmg"><strong>Download Said 0.1.0 Alpha</strong></a><br>
+  <sub>Apple silicon · macOS 26+ · Control-click Open once (alpha is not yet notarized)</sub>
+</p>
+
+<p align="center">
   <a href="https://github.com/r3dbars/said/actions/workflows/quality.yml"><img alt="Quality" src="https://github.com/r3dbars/said/actions/workflows/quality.yml/badge.svg"></a>
   <img alt="macOS 26+" src="https://img.shields.io/badge/macOS-26%2B-111318?logo=apple&logoColor=white">
   <img alt="Apple silicon" src="https://img.shields.io/badge/Apple%20silicon-only-111318">
