@@ -52,7 +52,6 @@ struct CaptionView: View {
             RoundedRectangle(cornerRadius: 15, style: .continuous)
                 .stroke(.white.opacity(contrast == .increased ? 0.42 : 0.11), lineWidth: 1)
         }
-        .shadow(color: .black.opacity(0.24), radius: 12, y: 5)
         .accessibilityElement(children: .contain)
     }
 
@@ -69,7 +68,6 @@ struct CaptionView: View {
                         lineWidth: 1
                     )
             }
-            .shadow(color: .black.opacity(0.28), radius: 18, y: 8)
     }
 
     private var captionRows: some View {
@@ -171,10 +169,7 @@ struct CaptionView: View {
         if reduceTransparency || contrast == .increased {
             shape.fill(Color.black)
         } else {
-            ZStack {
-                shape.fill(.ultraThickMaterial)
-                shape.fill(Color(red: 0.07, green: 0.075, blue: 0.085).opacity(0.72))
-            }
+            shape.fill(Color(red: 0.07, green: 0.075, blue: 0.085).opacity(0.96))
         }
     }
 
@@ -184,10 +179,7 @@ struct CaptionView: View {
         if reduceTransparency || contrast == .increased {
             shape.fill(Color(red: 0.10, green: 0.10, blue: 0.11))
         } else {
-            ZStack {
-                shape.fill(.thickMaterial)
-                shape.fill(Color(red: 0.10, green: 0.10, blue: 0.11).opacity(0.82))
-            }
+            shape.fill(Color(red: 0.10, green: 0.10, blue: 0.11).opacity(0.96))
         }
     }
 

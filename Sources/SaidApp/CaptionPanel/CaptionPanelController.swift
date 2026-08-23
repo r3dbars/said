@@ -16,6 +16,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     private var textSizeCancellable: AnyCancellable?
     private var panelWidthCancellable: AnyCancellable?
     private var visibilityEpoch = 0
+    private var isApplyingAnchoredFrame = false
 
     init(model: AppModel) {
         self.model = model
@@ -48,7 +49,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
             ),
             CaptionLine(id: 1, committed: "", tentative: "Nothing is uploaded."),
         ])
-        model.captionControlsMode = .hidden
+        hideControlsPreservingCaptionAnchor()
         panel.ignoresMouseEvents = true
         panel.isMovableByWindowBackground = false
         panel.alphaValue = 0
@@ -67,6 +68,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     func showHoverControlsPreview() {
         showPreview()
         revealHoverControls()
+        stopHoverMonitoring()
     }
 
     func show(_ snapshot: ASRTextSnapshot) {
@@ -163,18 +165,14 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         guard model.captionControlsMode == .hidden else { return }
         visibilityTask?.cancel()
         visibilityEpoch += 1
+        let captionFrame = currentCaptionFrame
+        let placement = toolbarPlacement(for: captionFrame)
         model.captionControlsMode = .hover
-        setPanelHeight(
-            model.captionTextSize.panelHeight
-                + CaptionPanelLayout.editingToolbarExtraHeight
-        )
-        updateToolbarPlacement()
+        model.captionToolbarPlacement = placement
+        applyPanelFrame(anchoredTo: captionFrame, controlsVisible: true, placement: placement)
         panel.alphaValue = 1
         panel.ignoresMouseEvents = false
         panel.isMovableByWindowBackground = true
-        if let screen = panel.screen ?? activeScreen() {
-            constrainPanel(to: screen.visibleFrame)
-        }
     }
 
     private func scheduleHoverDismiss() {
@@ -194,8 +192,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         guard model.captionControlsMode == .hover else { return }
         hoverDismissTask?.cancel()
         hoverDismissTask = nil
-        model.captionControlsMode = .hidden
-        setPanelHeight(model.captionTextSize.panelHeight)
+        hideControlsPreservingCaptionAnchor()
         saveLayout()
         panel.ignoresMouseEvents = true
         panel.isMovableByWindowBackground = false
@@ -209,21 +206,19 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         model.captionWindow = CaptionWindow(lines: [
             CaptionLine(id: 0, committed: "Move and size captions.", tentative: ""),
         ])
+        let captionFrame = currentCaptionFrame
+        let placement = toolbarPlacement(for: captionFrame)
         model.captionControlsMode = .placement
-        setPanelHeight(model.captionTextSize.panelHeight + CaptionPanelLayout.editingToolbarExtraHeight)
+        model.captionToolbarPlacement = placement
+        applyPanelFrame(anchoredTo: captionFrame, controlsVisible: true, placement: placement)
         panel.ignoresMouseEvents = false
         panel.isMovableByWindowBackground = true
-        if let screen = panel.screen ?? activeScreen() {
-            constrainPanel(to: screen.visibleFrame)
-        }
-        updateToolbarPlacement()
         panel.orderFrontRegardless()
     }
 
     func endPlacement() {
         visibilityEpoch += 1
-        model.captionControlsMode = .hidden
-        setPanelHeight(model.captionTextSize.panelHeight)
+        hideControlsPreservingCaptionAnchor()
         saveLayout()
         panel.ignoresMouseEvents = true
         panel.isMovableByWindowBackground = false
@@ -239,22 +234,44 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         guard let screen = activeScreen() else { return }
         model.captionPanelWidth = .medium
         let width = resolvedWidth(for: .medium, on: screen)
-        panel.setContentSize(Self.panelSize(for: model.captionTextSize, width: width))
-        placeAtDefaultPosition()
+        let visibleFrame = screen.visibleFrame
+        let captionFrame = NSRect(
+            x: visibleFrame.midX - width / 2,
+            y: visibleFrame.minY + 64,
+            width: width,
+            height: model.captionTextSize.panelHeight
+        )
+        let placement = model.captionControlsMode.isVisible
+            ? toolbarPlacement(for: captionFrame, on: screen)
+            : model.captionToolbarPlacement
+        model.captionToolbarPlacement = placement
+        applyPanelFrame(
+            anchoredTo: captionFrame,
+            controlsVisible: model.captionControlsMode.isVisible,
+            placement: placement
+        )
     }
 
     private func setPanelWidth(_ choice: CaptionPanelWidth) {
         guard let screen = panel.screen ?? activeScreen() else { return }
         let width = resolvedWidth(for: choice, on: screen)
-        var frame = panel.frame
-        let centerX = frame.midX
-        frame.size.width = width
-        frame.origin.x = centerX - width / 2
-        frame.origin.x = min(
-            max(frame.origin.x, screen.visibleFrame.minX),
+        var captionFrame = currentCaptionFrame
+        let centerX = captionFrame.midX
+        captionFrame.size.width = width
+        captionFrame.origin.x = centerX - width / 2
+        captionFrame.origin.x = min(
+            max(captionFrame.origin.x, screen.visibleFrame.minX),
             screen.visibleFrame.maxX - width
         )
-        panel.setFrame(frame, display: true)
+        let placement = model.captionControlsMode.isVisible
+            ? toolbarPlacement(for: captionFrame, on: screen)
+            : model.captionToolbarPlacement
+        model.captionToolbarPlacement = placement
+        applyPanelFrame(
+            anchoredTo: captionFrame,
+            controlsVisible: model.captionControlsMode.isVisible,
+            placement: placement
+        )
         saveLayout()
     }
 
@@ -263,8 +280,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         stopHoverMonitoring()
         visibilityEpoch += 1
         model.captionWindow = .empty
-        model.captionControlsMode = .hidden
-        setPanelHeight(model.captionTextSize.panelHeight)
+        hideControlsPreservingCaptionAnchor()
         panel.ignoresMouseEvents = true
         panel.isMovableByWindowBackground = false
         panel.orderOut(nil)
@@ -343,17 +359,17 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     }
 
     private func resizePanel(for size: CaptionTextSize) {
-        let editingHeight = model.captionControlsMode.isVisible
-            ? CaptionPanelLayout.editingToolbarExtraHeight
-            : 0
-        setPanelHeight(size.panelHeight + editingHeight)
-        updateToolbarPlacement()
-    }
-
-    private func setPanelHeight(_ height: Double) {
-        var frame = panel.frame
-        frame.size.height = height
-        panel.setFrame(frame, display: true)
+        var captionFrame = currentCaptionFrame
+        captionFrame.size.height = size.panelHeight
+        let placement = model.captionControlsMode.isVisible
+            ? toolbarPlacement(for: captionFrame)
+            : model.captionToolbarPlacement
+        model.captionToolbarPlacement = placement
+        applyPanelFrame(
+            anchoredTo: captionFrame,
+            controlsVisible: model.captionControlsMode.isVisible,
+            placement: placement
+        )
     }
 
     private static func panelSize(for textSize: CaptionTextSize, width: Double) -> NSSize {
@@ -362,13 +378,14 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
 
     private func saveLayout() {
         guard let screen = panel.screen ?? activeScreen() else { return }
-        constrainPanel(to: screen.visibleFrame)
+        constrainCaption(to: screen.visibleFrame)
+        let captionFrame = currentCaptionFrame
         let visible = screen.visibleFrame
-        let availableWidth = max(1, visible.width - panel.frame.width)
-        let availableHeight = max(1, visible.height - panel.frame.height)
+        let availableWidth = max(1, visible.width - captionFrame.width)
+        let availableHeight = max(1, visible.height - captionFrame.height)
         let normalized = NormalizedCaptionPosition(
-            x: (panel.frame.minX - visible.minX) / availableWidth,
-            y: (panel.frame.minY - visible.minY) / availableHeight
+            x: (captionFrame.minX - visible.minX) / availableWidth,
+            y: (captionFrame.minY - visible.minY) / availableHeight
         )
         defaults.set(normalized.x, forKey: Keys.positionX)
         defaults.set(normalized.y, forKey: Keys.positionY)
@@ -385,6 +402,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     }
 
     func windowDidMove(_ notification: Notification) {
+        guard !isApplyingAnchoredFrame else { return }
         updateToolbarPlacement()
     }
 
@@ -392,17 +410,121 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         guard model.captionControlsMode.isVisible,
               let screen = panel.screen ?? activeScreen()
         else { return }
-        model.captionToolbarPlacement = .forVerticalPosition(
-            panelMidY: panel.frame.midY,
-            displayMidY: screen.visibleFrame.midY
+        let captionFrame = currentCaptionFrame
+        let placement = toolbarPlacement(for: captionFrame, on: screen)
+        guard placement != model.captionToolbarPlacement else { return }
+        model.captionToolbarPlacement = placement
+        applyPanelFrame(anchoredTo: captionFrame, controlsVisible: true, placement: placement)
+    }
+
+    private var currentCaptionFrame: NSRect {
+        let controlsVisible = model.captionControlsMode.isVisible
+        let extraHeight = controlsVisible ? CaptionPanelLayout.editingToolbarExtraHeight : 0
+        let captionHeight = max(0, panel.frame.height - extraHeight)
+        let captionMinY = CaptionPanelGeometry.captionMinY(
+            panelMinY: panel.frame.minY,
+            controlsVisible: controlsVisible,
+            placement: model.captionToolbarPlacement,
+            toolbarExtraHeight: CaptionPanelLayout.editingToolbarExtraHeight
+        )
+        return NSRect(
+            x: panel.frame.minX,
+            y: captionMinY,
+            width: panel.frame.width,
+            height: captionHeight
         )
     }
 
-    private func constrainPanel(to visibleFrame: NSRect) {
-        var frame = panel.frame
-        frame.origin.x = min(max(frame.origin.x, visibleFrame.minX), visibleFrame.maxX - frame.width)
-        frame.origin.y = min(max(frame.origin.y, visibleFrame.minY), visibleFrame.maxY - frame.height)
+    private func hideControlsPreservingCaptionAnchor() {
+        let captionFrame = currentCaptionFrame
+        model.captionControlsMode = .hidden
+        applyPanelFrame(
+            anchoredTo: captionFrame,
+            controlsVisible: false,
+            placement: model.captionToolbarPlacement
+        )
+    }
+
+    private func applyPanelFrame(
+        anchoredTo captionFrame: NSRect,
+        controlsVisible: Bool,
+        placement: CaptionToolbarPlacement
+    ) {
+        let frame = NSRect(
+            x: captionFrame.minX,
+            y: CaptionPanelGeometry.panelMinY(
+                captionMinY: captionFrame.minY,
+                controlsVisible: controlsVisible,
+                placement: placement,
+                toolbarExtraHeight: CaptionPanelLayout.editingToolbarExtraHeight
+            ),
+            width: captionFrame.width,
+            height: CaptionPanelGeometry.panelHeight(
+                captionHeight: captionFrame.height,
+                controlsVisible: controlsVisible,
+                toolbarExtraHeight: CaptionPanelLayout.editingToolbarExtraHeight
+            )
+        )
+        isApplyingAnchoredFrame = true
         panel.setFrame(frame, display: true)
+        isApplyingAnchoredFrame = false
+    }
+
+    private func toolbarPlacement(
+        for captionFrame: NSRect,
+        on providedScreen: NSScreen? = nil
+    ) -> CaptionToolbarPlacement {
+        guard let screen = providedScreen ?? panel.screen ?? activeScreen() else {
+            return model.captionToolbarPlacement
+        }
+        let preferred = CaptionToolbarPlacement.forVerticalPosition(
+            panelMidY: captionFrame.midY,
+            displayMidY: screen.visibleFrame.midY
+        )
+        if toolbarFits(preferred, around: captionFrame, in: screen.visibleFrame) {
+            return preferred
+        }
+        let alternate: CaptionToolbarPlacement = preferred == .above ? .below : .above
+        return toolbarFits(alternate, around: captionFrame, in: screen.visibleFrame)
+            ? alternate
+            : preferred
+    }
+
+    private func toolbarFits(
+        _ placement: CaptionToolbarPlacement,
+        around captionFrame: NSRect,
+        in visibleFrame: NSRect
+    ) -> Bool {
+        let panelMinY = CaptionPanelGeometry.panelMinY(
+            captionMinY: captionFrame.minY,
+            controlsVisible: true,
+            placement: placement,
+            toolbarExtraHeight: CaptionPanelLayout.editingToolbarExtraHeight
+        )
+        let panelMaxY = panelMinY + captionFrame.height
+            + CaptionPanelLayout.editingToolbarExtraHeight
+        return panelMinY >= visibleFrame.minY && panelMaxY <= visibleFrame.maxY
+    }
+
+    private func constrainCaption(to visibleFrame: NSRect) {
+        var captionFrame = currentCaptionFrame
+        captionFrame.origin.x = min(
+            max(captionFrame.origin.x, visibleFrame.minX),
+            visibleFrame.maxX - captionFrame.width
+        )
+        captionFrame.origin.y = min(
+            max(captionFrame.origin.y, visibleFrame.minY),
+            visibleFrame.maxY - captionFrame.height
+        )
+        let placement = model.captionControlsMode.isVisible
+            ? toolbarPlacement(for: captionFrame)
+            : model.captionToolbarPlacement
+        model.captionToolbarPlacement = placement
+        applyPanelFrame(
+            anchoredTo: captionFrame,
+            controlsVisible: model.captionControlsMode.isVisible,
+            placement: placement
+        )
     }
 
     private func savedScreen() -> NSScreen? {
