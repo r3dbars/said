@@ -83,10 +83,11 @@ struct CaptionView: View {
         .font(
             .system(
                 size: model.captionTextSize.pointSize,
-                weight: .semibold,
+                weight: model.captionFontStyle.fontWeight,
                 design: model.captionFontStyle.fontDesign
             )
         )
+        .fontWidth(model.captionFontStyle.fontWidth)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(model.visibleCaptionText)
@@ -124,6 +125,14 @@ struct CaptionView: View {
         } label: {
             HStack(spacing: 4) {
                 Text("Aa")
+                    .font(
+                        .system(
+                            size: 12,
+                            weight: model.captionFontStyle.fontWeight,
+                            design: model.captionFontStyle.fontDesign
+                        )
+                    )
+                    .fontWidth(model.captionFontStyle.fontWidth)
                 Text(model.captionFontStyle.title)
                     .lineLimit(1)
             }
@@ -133,7 +142,7 @@ struct CaptionView: View {
         .fixedSize()
         .help("Change caption font")
         .accessibilityLabel("Caption font, \(model.captionFontStyle.title)")
-        .accessibilityHint("Cycles through Rounded, Sans, and Serif")
+        .accessibilityHint("Cycles through Rounded, Sans, Serif, Mono, and Block")
     }
 
     private var colorControls: some View {
@@ -185,8 +194,23 @@ private extension CaptionFontStyle {
     var fontDesign: Font.Design {
         switch self {
         case .rounded: .rounded
-        case .sans: .default
+        case .sans, .block: .default
         case .serif: .serif
+        case .mono: .monospaced
+        }
+    }
+
+    var fontWeight: Font.Weight {
+        switch self {
+        case .block: .black
+        case .rounded, .sans, .serif, .mono: .semibold
+        }
+    }
+
+    var fontWidth: Font.Width {
+        switch self {
+        case .mono: .condensed
+        case .rounded, .sans, .serif, .block: .standard
         }
     }
 }

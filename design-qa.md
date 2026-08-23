@@ -5,6 +5,7 @@
 - Source visual truth: `/var/folders/rm/99g7pxgn6d72plzypdcy18j40000gn/T/TemporaryItems/NSIRD_screencaptureui_bjEBbV/Screenshot 2026-08-22 at 2.53.28 PM.png` (2222 × 160 px).
 - Additional source visual truth: `/Users/redbars/Desktop/Screenshot 2026-08-22 at 7.46.55 PM.png` (900 × 389 px), showing the unwanted rectangular material/shadow regions around both rounded surfaces.
 - Current native implementation captures: `/private/tmp/said-unified-scale-medium.png` and `/private/tmp/said-unified-scale-xl.png`.
+- Final Block font capture: [`docs/assets/caption-block-font.jpeg`](docs/assets/caption-block-font.jpeg).
 - Latest same-input visual comparison: [`docs/assets/caption-unified-scale-comparison.png`](docs/assets/caption-unified-scale-comparison.png). The prior separate controls are above and the unified native Said control is below.
 - Verified states: all five caption-size presets, including Medium at 34 pt / 760 pt wide and Extra Large at 56 pt / 1,280 pt wide.
 
@@ -16,7 +17,7 @@ without copying unrelated document actions.
 
 | Surface | Result |
 | --- | --- |
-| Typography | One compact value such as `M 34px` communicates the active caption scale. Font remains a separate typographic choice because it does not alter geometry. |
+| Typography | One compact value such as `M 34px` communicates the active caption scale. Font remains a separate typographic choice because it does not alter geometry. Rounded, Sans, Serif, condensed Mono, and heavy Block offer five distinct native treatments. |
 | Spacing | Move, caption scale, font, color, and Done form one shorter left-aligned cluster with consistent separators. The redundant second size control is gone. |
 | Color | The neutral charcoal surface follows the reference. White, warm yellow, and cyan remain direct choices with a clear selected ring. |
 | Icons/assets | The only icon is the native move affordance. Sizing uses readable values instead of approximate resize imagery. |
@@ -35,6 +36,7 @@ without copying unrelated document actions.
 - Core Graphics reported the caption-only window at `X 639, Y 195, 360 × 72` and the hover window at `X 639, Y 195, 360 × 128`; the caption card's top-left screen coordinate is unchanged while the toolbar is added below it.
 - The saved normalized position is calculated from the caption card rather than the temporarily expanded toolbar window.
 - Caption scale, font, and color persist as ordinary local settings. Existing independent text/width preferences migrate to the nearest unified preset.
+- Mono and Block were exercised in the running native panel. Mono remains compact enough for the fixed two-line surface; Block uses the system sans face at black weight for a strong display treatment without clipping the XS preview.
 - Normal caption mode remains click-through after the hover grace period.
 - Forty-four deterministic tests and the privacy smoke pass.
 
@@ -52,6 +54,8 @@ without copying unrelated document actions.
 10. Replaced independent text-size and window-width controls with one five-step Caption Size preset.
 11. Tuned each preset to retain a consistent readable word count while preserving the existing XS–XL physical range and Medium default.
 12. The final native click-through and combined source/implementation comparison found no actionable P0, P1, or P2 defects.
+13. Added Mono and Block to the font cycle, then tightened their treatments after native review exposed clipping in the first expanded Block draft.
+14. The final Block preview preserves the complete caption at XS while remaining visibly heavier than Sans.
 
 ## Final result
 
