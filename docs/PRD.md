@@ -146,7 +146,7 @@ colored hypotheses, springs, or per-character animation.
 
 The hover/placement caption-control bar offers three intentionally small appearance
 sets: one XS–XL Caption Size control that changes type and panel geometry together,
-Rounded/Sans/Serif system fonts, and White/Warm Yellow/Cyan text. Size and font
+Rounded/Sans/Serif/Mono/Block system fonts, and White/Warm Yellow/Cyan text. Size and font
 changes are one-click cycles; color swatches are direct one-click choices.
 Tentative text uses the selected color at reduced opacity rather than a different
 semantic hue. All choices persist as ordinary app settings.
@@ -398,6 +398,7 @@ long-run memory cannot be bounded.
 | 2026-08-22 | Replace freeform width dragging with XS–XL width steps | The narrow drag target was hard to acquire and produced unpredictable sizing. A bounded click control is easier to understand, accessible from hover or menu customization, and persists deterministically. |
 | 2026-08-22 | Make size labels cycle directly and flip the toolbar by vertical position | Removing arrow targets makes sizing behave like the compact reference toolbar. Keeping controls left-aligned reduces eye travel, while moving the toolbar below top-positioned captions prevents it from obstructing or being pushed off-screen. |
 | 2026-08-22 | Combine text and window size into one XS–XL Caption Size setting | Independent size controls allowed awkward combinations and added unnecessary choice. Five balanced presets preserve the useful physical range, keep line length consistent, and make the toolbar shorter and easier to understand. |
+| 2026-08-22 | Add Mono and Block caption faces | A five-style system-font set adds genuinely different reading treatments without introducing font installation, arbitrary pickers, or non-native dependencies. |
 
 ## Definition of done
 

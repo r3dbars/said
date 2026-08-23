@@ -120,11 +120,13 @@ final class CaptionWindowingTests: XCTestCase {
     }
 
     func testCaptionAppearanceChoicesStaySmallAndExplicit() {
-        XCTAssertEqual(CaptionFontStyle.allCases, [.rounded, .sans, .serif])
+        XCTAssertEqual(CaptionFontStyle.allCases, [.rounded, .sans, .serif, .mono, .block])
         XCTAssertEqual(CaptionTextColor.allCases, [.white, .yellow, .cyan])
         XCTAssertEqual(CaptionFontStyle.rounded.next, .sans)
         XCTAssertEqual(CaptionFontStyle.sans.next, .serif)
-        XCTAssertEqual(CaptionFontStyle.serif.next, .rounded)
+        XCTAssertEqual(CaptionFontStyle.serif.next, .mono)
+        XCTAssertEqual(CaptionFontStyle.mono.next, .block)
+        XCTAssertEqual(CaptionFontStyle.block.next, .rounded)
     }
 
     func testCaptionControlModesPreserveHoverAndMenuRoles() {

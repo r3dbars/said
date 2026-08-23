@@ -2,12 +2,16 @@ public enum CaptionFontStyle: String, CaseIterable, Codable, Sendable {
     case rounded
     case sans
     case serif
+    case mono
+    case block
 
     public var title: String {
         switch self {
         case .rounded: "Rounded"
         case .sans: "Sans"
         case .serif: "Serif"
+        case .mono: "Mono"
+        case .block: "Block"
         }
     }
 
@@ -15,7 +19,9 @@ public enum CaptionFontStyle: String, CaseIterable, Codable, Sendable {
         switch self {
         case .rounded: .sans
         case .sans: .serif
-        case .serif: .rounded
+        case .serif: .mono
+        case .mono: .block
+        case .block: .rounded
         }
     }
 }
