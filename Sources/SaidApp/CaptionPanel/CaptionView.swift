@@ -69,19 +69,19 @@ struct CaptionView: View {
     }
 
     private var captionRows: some View {
-        VStack(alignment: .center, spacing: 4) {
+        VStack(alignment: .leading, spacing: 4) {
             if model.captionWindow.lines.isEmpty,
                let placeholder = model.captionPlaceholderText {
                 Text(placeholder)
                     .foregroundStyle(captionColor.opacity(0.46))
                     .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .center)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 ForEach(model.captionWindow.lines) { line in
                     Text("\(Text(line.committed).foregroundStyle(captionColor))\(Text(line.tentative).foregroundStyle(captionColor.opacity(0.64)))")
                         .lineLimit(1)
                         .truncationMode(.head)
-                        .frame(maxWidth: .infinity, alignment: .center)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
         }
@@ -93,8 +93,7 @@ struct CaptionView: View {
             )
         )
         .fontWidth(model.captionFontStyle.fontWidth)
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(model.visibleCaptionText.isEmpty
             ? model.captionPlaceholderText ?? ""

@@ -17,7 +17,6 @@
 - Caption-centering source visual truths: `/Users/redbars/Desktop/Screenshot 2026-08-23 at 1.22.51 PM.png`, `/Users/redbars/Desktop/Screenshot 2026-08-23 at 1.22.55 PM.png`, `/Users/redbars/Desktop/Screenshot 2026-08-23 at 1.22.58 PM.png`, and `/Users/redbars/Desktop/Screenshot 2026-08-23 at 1.23.04 PM.png`, all showing the prior bottom-aligned caption block.
 - Revised running native caption capture: [`docs/assets/caption-optically-centered.jpeg`](docs/assets/caption-optically-centered.jpeg) (520 × 152 px).
 - Density-normalized caption-card comparison: [`docs/assets/caption-centering-comparison.png`](docs/assets/caption-centering-comparison.png). The prior card is above and the revised centered card is below, normalized to the same 520 × 95 pt card region.
-- Latest native centered-composition capture: [`docs/assets/caption-centered-composition.jpeg`](docs/assets/caption-centered-composition.jpeg) (360 × 72 px at the user's active XS preset). This verifies spatial balance at the narrowest supported card rather than substituting a design mockup.
 - Verified states: all five caption-size presets, including Medium at 34 pt / 760 pt wide and Extra Large at 56 pt / 1,280 pt wide.
 
 The screenshot is the visual reference for a compact, neutral, single-row dark
@@ -38,7 +37,7 @@ without copying unrelated document actions.
 | Menu hierarchy | A compact semibold Said header and small native switch create one immediate on/off decision. A separate, quieter operational row uses a small semantic indicator and short status copy; actions remain ordinary native menu commands below it. |
 | Menu restraint | Said borrows the reference's clear product-name/switch header, dark native material, separators, and muted hierarchy without importing Klack's sound, theme, or decorative controls. The only status color is a small system semantic dot. |
 | Menu trust | Version, Settings, Privacy, and Quit remain visible and conventionally ordered. The switch changes the existing persisted caption state; it is not a visual-only control. |
-| Caption optical balance | Each stable subtitle row is horizontally centered and the complete one- or two-line block is vertically centered inside the fixed caption card. The reducer still advances complete rows; the card does not resize and earlier words are not rebalanced between rows as speech arrives. |
+| Caption optical balance | The complete one- or two-line reading block is vertically centered inside the fixed caption card while remaining left-aligned. The rolling reducer still advances complete rows, so optical centering does not reintroduce per-word horizontal or vertical motion. |
 
 ## Interaction evidence
 
@@ -58,7 +57,6 @@ without copying unrelated document actions.
 - The native menu preview path rendered the actual header and status view classes. On/off synchronization remains driven by `AppModel`, so menu state, caption visibility, capture state, tooltip, and filled/unfilled status icon cannot drift into separate preference values.
 - Both actual component states were rendered: On uses the scoped teal switch tint with green `Listening locally` status; Off uses the system-neutral switch track with gray `Captions are off` status. The tint is confined to the switch and does not change the user's global macOS accent color.
 - The two-line native caption preview was captured in the running app. Its card has visually balanced top and bottom breathing room; the accessibility tree still exposes the complete visible caption as one value.
-- The narrowest XS card was captured after horizontal centering. Both rows retain symmetric side breathing room, stay inside the fixed two-line surface, and expose the full visible caption as one accessibility value.
 
 ## Iteration history
 
@@ -88,9 +86,6 @@ without copying unrelated document actions.
 24. The supplied live-caption sequence exposed a P2 optical-balance issue: the reading stack used explicit bottom alignment and inserted a spacer above one-line captions, making the primary surface feel low and uneven.
 25. Removed the single-line spacer and centered the complete reading stack vertically while retaining the 24-point horizontal inset, two-line cap, four-point interline spacing, leading alignment, and stable rolling-row reducer.
 26. The normalized before/after card comparison confirms balanced vertical breathing room without clipping, reflow, or a change to card geometry. No actionable P0, P1, or P2 caption-centering issue remains.
-27. Continued live use exposed a second P2 composition issue: stable short rows were visually stranded against the left edge, making the unused right side of the fixed card look accidental.
-28. Centered each already-stable row horizontally while keeping the full stack vertically centered. The fixed card geometry, reducer capacities, row boundaries, tentative suffix behavior, and complete-row advancement remain unchanged.
-29. The running native XS preview confirms balanced side and vertical breathing room without clipping or card movement. No actionable P0, P1, or P2 issue remains in the caption-composition scope.
 
 ## Final result
 
