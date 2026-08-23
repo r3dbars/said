@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">How Said turns Mac audio into private live captions</title>
+  <desc id="desc">Mac playback is normalized in memory, processed by Parakeet on the Mac, shown as captions, and released without a recording or transcript.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#10151c"/>
+      <stop offset="1" stop-color="#080b0f"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="170%">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000" flood-opacity=".32"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="360" rx="32" fill="url(#background)"/>
+  <text x="60" y="58" fill="#f5f7fa" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="700">A private path from sound to words</text>
+  <text x="60" y="88" fill="#8b949e" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="16">The useful result stays on the same Mac as the audio.</text>
+
+  <g filter="url(#shadow)">
+    <rect x="60" y="125" width="240" height="128" rx="22" fill="#171d25" stroke="#303946"/>
+    <rect x="340" y="125" width="240" height="128" rx="22" fill="#171d25" stroke="#303946"/>
+    <rect x="620" y="125" width="240" height="128" rx="22" fill="#171d25" stroke="#303946"/>
+    <rect x="900" y="125" width="240" height="128" rx="22" fill="#171d25" stroke="#303946"/>
+  </g>
+
+  <g fill="none" stroke="#56d6c9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M135 163v48M153 176v22M171 153v68M189 169v36M207 160v54M225 180v14"/>
+    <path d="M402 184h14l8-22 15 47 12-35 11 25h54"/>
+    <rect x="696" y="151" width="88" height="72" rx="14"/>
+    <path d="M712 169h56M712 187h38M712 205h47"/>
+    <path d="M960 157h120a15 15 0 0 1 15 15v31a15 15 0 0 1-15 15h-63l-22 18 5-18h-40a15 15 0 0 1-15-15v-31a15 15 0 0 1 15-15z"/>
+    <path d="M969 177h99M969 195h72"/>
+  </g>
+
+  <g fill="#f5f7fa" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="17" font-weight="700">
+    <text x="180" y="281" text-anchor="middle">Mac playback</text>
+    <text x="460" y="281" text-anchor="middle">In-memory audio</text>
+    <text x="740" y="281" text-anchor="middle">On-device model</text>
+    <text x="1020" y="281" text-anchor="middle">Live captions</text>
+  </g>
+  <g fill="#8b949e" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14">
+    <text x="180" y="304" text-anchor="middle">Call · video · podcast</text>
+    <text x="460" y="304" text-anchor="middle">Normalized and bounded</text>
+    <text x="740" y="304" text-anchor="middle">Parakeet + Metal</text>
+    <text x="1020" y="304" text-anchor="middle">Visible, then gone</text>
+  </g>
+
+  <g fill="#59636f">
+    <path d="M310 188h18l-7-7 3-3 13 12-13 12-3-3 7-7h-18z"/>
+    <path d="M590 188h18l-7-7 3-3 13 12-13 12-3-3 7-7h-18z"/>
+    <path d="M870 188h18l-7-7 3-3 13 12-13 12-3-3 7-7h-18z"/>
+  </g>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="650">
+    <text x="60" y="336" fill="#ffd85a">NO MICROPHONE</text>
+    <text x="205" y="336" fill="#ffd85a">NO SCREEN PIXELS</text>
+    <text x="383" y="336" fill="#ffd85a">NO ACCOUNT</text>
+    <text x="500" y="336" fill="#ffd85a">NO AUDIO FILE</text>
+    <text x="631" y="336" fill="#ffd85a">NO TRANSCRIPT HISTORY</text>
+    <text x="834" y="336" fill="#8b949e">Network: model download and app updates only</text>
+  </g>
+</svg>
