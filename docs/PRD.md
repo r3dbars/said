@@ -61,7 +61,7 @@ account, recording, or permanent transcript.
 | Accounts / billing | None in V1 |
 | Cloud / fallbacks | None; no Apple Speech, Whisper, or Nemotron |
 | Content retention | No audio files, transcripts, history, save, or export |
-| Controls | One persistent menu-bar Captions On toggle; no rewind or session controls |
+| Controls | One persistent native menu-bar Said switch; no rewind or session controls |
 | Expansion | No translation, summaries, labels, detection, or model picker |
 | Data services | No analytics or third-party crash reporting |
 | Distribution | Direct signed and notarized Mac app; no App Store V1 |
@@ -99,13 +99,13 @@ downloads resume safely. Denied permission offers System Settings and Retry.
 ### Later launches
 
 Launch as a menu-bar utility, validate the model, and start capture when the
-saved Captions On toggle is enabled. Keep the caption panel visible for the
+saved Said switch is enabled. Keep the caption panel visible for the
 entire enabled session, including silence between speakers.
 
 ### Menu
 
 1. Disabled local status row.
-2. Checked **Captions On** toggle.
+2. Native **Said** switch.
 3. **Customize Captions…**
 4. **Settings…**
 5. **Privacy…**
@@ -115,7 +115,7 @@ Turning captions off immediately hides the panel, stops system-audio capture,
 and clears ephemeral caption state. Turning captions on restarts the existing
 local pipeline and presents the caption panel immediately when the model is
 ready. The off state persists across launches and must be unmistakable:
-the status row reads **Captions are off**, the toggle is unchecked, and the
+the status row reads **Captions are off**, the switch is off, and the
 menu-bar icon uses its unfilled treatment.
 
 ### Caption panel
@@ -153,7 +153,7 @@ changes are one-click cycles; color swatches are direct one-click choices.
 Tentative text uses the selected color at reduced opacity rather than a different
 semantic hue. All choices persist as ordinary app settings.
 
-While Captions On is enabled, keep the panel visible and preserve the latest
+While the Said switch is enabled, keep the panel visible and preserve the latest
 caption between utterances. Before the first caption, show one quiet secondary
 status such as **Waiting for speech…**. Starting, recovery, and failure states
 may replace that placeholder with equally short human copy. Do not fade or hide
@@ -406,6 +406,7 @@ long-run memory cannot be bounded.
 | 2026-08-22 | Combine text and window size into one XS–XL Caption Size setting | Independent size controls allowed awkward combinations and added unnecessary choice. Five balanced presets preserve the useful physical range, keep line length consistent, and make the toolbar shorter and easier to understand. |
 | 2026-08-22 | Add Mono and Block caption faces | A five-style system-font set adds genuinely different reading treatments without introducing font installation, arbitrary pickers, or non-native dependencies. |
 | 2026-08-22 | Keep the caption panel visible while Captions On | Said is a deliberate call/video mode rather than an all-day ambient overlay. A persistent surface makes the on/off state predictable, preserves the reader's visual anchor between speakers, and disappears only when the user turns captions off. |
+| 2026-08-23 | Use a native Said switch at the top of the menu | A bold product header plus a switch communicates the persistent on/off state more immediately than a checked command item. A restrained status indicator remains directly below it so control and operational truth stay distinct. |
 
 ## Definition of done
 
