@@ -14,6 +14,9 @@
 - Revised native Said header/status render: [`docs/assets/said-menu-compact-header.png`](docs/assets/said-menu-compact-header.png) (520 × 132 px at 2× density; 260 × 66 pt).
 - Revised Off-state render: [`docs/assets/said-menu-compact-off.png`](docs/assets/said-menu-compact-off.png), confirming the switch and status indicator both return to neutral gray.
 - Density-normalized 260 × 38 pt header comparison: [`docs/assets/said-menu-compact-comparison.png`](docs/assets/said-menu-compact-comparison.png). Klack is on the left and revised Said is on the right at the same 2× density.
+- Caption-centering source visual truths: `/Users/redbars/Desktop/Screenshot 2026-08-23 at 1.22.51 PM.png`, `/Users/redbars/Desktop/Screenshot 2026-08-23 at 1.22.55 PM.png`, `/Users/redbars/Desktop/Screenshot 2026-08-23 at 1.22.58 PM.png`, and `/Users/redbars/Desktop/Screenshot 2026-08-23 at 1.23.04 PM.png`, all showing the prior bottom-aligned caption block.
+- Revised running native caption capture: [`docs/assets/caption-optically-centered.jpeg`](docs/assets/caption-optically-centered.jpeg) (520 × 152 px).
+- Density-normalized caption-card comparison: [`docs/assets/caption-centering-comparison.png`](docs/assets/caption-centering-comparison.png). The prior card is above and the revised centered card is below, normalized to the same 520 × 95 pt card region.
 - Verified states: all five caption-size presets, including Medium at 34 pt / 760 pt wide and Extra Large at 56 pt / 1,280 pt wide.
 
 The screenshot is the visual reference for a compact, neutral, single-row dark
@@ -34,6 +37,7 @@ without copying unrelated document actions.
 | Menu hierarchy | A compact semibold Said header and small native switch create one immediate on/off decision. A separate, quieter operational row uses a small semantic indicator and short status copy; actions remain ordinary native menu commands below it. |
 | Menu restraint | Said borrows the reference's clear product-name/switch header, dark native material, separators, and muted hierarchy without importing Klack's sound, theme, or decorative controls. The only status color is a small system semantic dot. |
 | Menu trust | Version, Settings, Privacy, and Quit remain visible and conventionally ordered. The switch changes the existing persisted caption state; it is not a visual-only control. |
+| Caption optical balance | The complete one- or two-line reading block is vertically centered inside the fixed caption card while remaining left-aligned. The rolling reducer still advances complete rows, so optical centering does not reintroduce per-word horizontal or vertical motion. |
 
 ## Interaction evidence
 
@@ -52,6 +56,7 @@ without copying unrelated document actions.
 - Forty-five deterministic tests and the privacy smoke pass.
 - The native menu preview path rendered the actual header and status view classes. On/off synchronization remains driven by `AppModel`, so menu state, caption visibility, capture state, tooltip, and filled/unfilled status icon cannot drift into separate preference values.
 - Both actual component states were rendered: On uses the scoped teal switch tint with green `Listening locally` status; Off uses the system-neutral switch track with gray `Captions are off` status. The tint is confined to the switch and does not change the user's global macOS accent color.
+- The two-line native caption preview was captured in the running app. Its card has visually balanced top and bottom breathing room; the accessibility tree still exposes the complete visible caption as one value.
 
 ## Iteration history
 
@@ -78,6 +83,9 @@ without copying unrelated document actions.
 21. Reduced the header to 38 points, title to 15-point semibold, and toggle to the small native SwiftUI switch style so it can use a per-control teal tint while `AppModel` remains the only source of truth.
 22. Reduced the status row to 28 points, removed one redundant separator, and changed `Settings…` to `Said Settings…` without a shortcut so macOS no longer injects the oversized special Settings icon/alignment treatment.
 23. The final density-normalized 260 × 38 point comparison shows matching header height, inset rhythm, title scale, switch scale, and teal On state. No actionable P0, P1, or P2 differences remain in the requested menu-header scope.
+24. The supplied live-caption sequence exposed a P2 optical-balance issue: the reading stack used explicit bottom alignment and inserted a spacer above one-line captions, making the primary surface feel low and uneven.
+25. Removed the single-line spacer and centered the complete reading stack vertically while retaining the 24-point horizontal inset, two-line cap, four-point interline spacing, leading alignment, and stable rolling-row reducer.
+26. The normalized before/after card comparison confirms balanced vertical breathing room without clipping, reflow, or a change to card geometry. No actionable P0, P1, or P2 caption-centering issue remains.
 
 ## Final result
 

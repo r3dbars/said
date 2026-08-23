@@ -408,6 +408,7 @@ long-run memory cannot be bounded.
 | 2026-08-22 | Keep the caption panel visible while Captions On | Said is a deliberate call/video mode rather than an all-day ambient overlay. A persistent surface makes the on/off state predictable, preserves the reader's visual anchor between speakers, and disappears only when the user turns captions off. |
 | 2026-08-23 | Use a native Said switch at the top of the menu | A bold product header plus a switch communicates the persistent on/off state more immediately than a checked command item. A restrained status indicator remains directly below it so control and operational truth stay distinct. |
 | 2026-08-23 | Keep the menu header compact and tint only the On state | A 38-point header, 15-point semibold title, and small switch match normal Mac menu density. Teal makes On unmistakable while Off remains system-neutral; the tint is local to Said and does not alter the user's global accent color. |
+| 2026-08-23 | Optically center the caption reading block | The caption surface is the product's primary reading experience. Centering the complete one- or two-line block gives it balanced top and bottom breathing room without changing the stable row-by-row text flow or left alignment. |
 
 ## Definition of done
 
