@@ -101,6 +101,13 @@ final class AppModel: ObservableObject {
     }
 
     var visibleCaptionText: String { captionWindow.text }
+    var captionPlaceholderText: String? {
+        CaptionSurfaceText.placeholder(
+            model: modelState,
+            capture: captureState,
+            captionsEnabled: captionsEnabled
+        )
+    }
 
     func setLaunchAtLogin(_ enabled: Bool) {
         do {
