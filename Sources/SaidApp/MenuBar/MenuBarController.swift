@@ -84,7 +84,6 @@ final class MenuBarController: NSObject {
         statusItem.view = statusView
         self.statusView = statusView
         menu.addItem(statusItem)
-        menu.addItem(.separator())
         menu.addItem(item("Customize Captions…", action: #selector(moveCaptions)))
         menu.addItem(.separator())
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
@@ -92,7 +91,7 @@ final class MenuBarController: NSObject {
         let versionItem = NSMenuItem(title: "Version \(version)", action: nil, keyEquivalent: "")
         versionItem.isEnabled = false
         menu.addItem(versionItem)
-        menu.addItem(item("Settings…", action: #selector(openSettings), key: ","))
+        menu.addItem(item("Said Settings…", action: #selector(openSettings)))
         menu.addItem(item("Privacy…", action: #selector(openPrivacy)))
         menu.addItem(.separator())
         menu.addItem(item("Quit Said", action: #selector(quit), key: "q"))

@@ -70,9 +70,6 @@ struct CaptionView: View {
 
     private var captionRows: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if model.captionWindow.lines.count < 2 {
-                Spacer(minLength: 0)
-            }
             if model.captionWindow.lines.isEmpty,
                let placeholder = model.captionPlaceholderText {
                 Text(placeholder)
@@ -96,7 +93,7 @@ struct CaptionView: View {
             )
         )
         .fontWidth(model.captionFontStyle.fontWidth)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(model.visibleCaptionText.isEmpty
             ? model.captionPlaceholderText ?? ""
