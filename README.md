@@ -32,7 +32,7 @@
 <p align="center"><em>Hear. Read. Gone.</em></p>
 
 <p align="center">
-  <img src="docs/assets/said-live-captions.png" width="960" alt="Said showing live yellow captions over a podcast playing on a Mac">
+  <img src="docs/assets/said-live-captions-v2.png" width="960" alt="Said showing live yellow captions over a podcast playing on a Mac">
 </p>
 
 <p align="center"><sub>Real Said captions from a podcast playing in another app.</sub></p>
