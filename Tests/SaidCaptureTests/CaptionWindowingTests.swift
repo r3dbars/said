@@ -33,6 +33,45 @@ final class CaptionWindowingTests: XCTestCase {
         XCTAssertEqual(CaptionPanelWidth.nearest(to: 1_250), .extraLarge)
     }
 
+    func testCaptionScalePairsTextAndWindowIntoFiveBalancedPresets() {
+        XCTAssertEqual(CaptionScale.allCases.map(\.title), ["XS", "S", "M", "L", "XL"])
+        XCTAssertEqual(
+            CaptionScale.allCases.map { $0.textSize.pointSize },
+            [14, 22, 34, 44, 56]
+        )
+        XCTAssertEqual(
+            CaptionScale.allCases.map { $0.panelWidth.preferredWidth },
+            [360, 520, 760, 1_000, 1_280]
+        )
+        XCTAssertEqual(CaptionScale.extraSmall.next, .small)
+        XCTAssertEqual(CaptionScale.medium.next, .large)
+        XCTAssertEqual(CaptionScale.extraLarge.next, .extraSmall)
+        XCTAssertEqual(
+            CaptionScale.allCases.map {
+                CaptionPanelLayout.wordsPerLine(
+                    width: $0.panelWidth.preferredWidth,
+                    textSize: $0.textSize
+                )
+            },
+            [7, 7, 7, 6, 6]
+        )
+    }
+
+    func testCaptionScaleMigratesCommonIndependentSettings() {
+        XCTAssertEqual(
+            CaptionScale.nearest(textSize: .tiny, panelWidth: .extraSmall),
+            .extraSmall
+        )
+        XCTAssertEqual(
+            CaptionScale.nearest(textSize: .standard, panelWidth: .medium),
+            .medium
+        )
+        XCTAssertEqual(
+            CaptionScale.nearest(textSize: .extraLarge, panelWidth: .extraLarge),
+            .extraLarge
+        )
+    }
+
     func testCaptionRowCapacityTracksWidthAndTextSize() {
         XCTAssertEqual(
             CaptionPanelLayout.wordsPerLine(width: 760, textSize: .standard),

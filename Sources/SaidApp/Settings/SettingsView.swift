@@ -36,9 +36,9 @@ struct SettingsView: View {
                 }
             } else {
                 Section("Captions") {
-                    Picker("Text size", selection: $model.captionTextSize) {
-                        ForEach(CaptionTextSize.allCases, id: \.self) { size in
-                            Text(size.title).tag(size)
+                    Picker("Caption size", selection: $model.captionScale) {
+                        ForEach(CaptionScale.allCases, id: \.self) { scale in
+                            Text(scale.title).tag(scale)
                         }
                     }
                     .pickerStyle(.segmented)
