@@ -117,6 +117,48 @@ final class CaptionWindowingTests: XCTestCase {
         )
     }
 
+    func testToolbarVisibilityAndPlacementPreserveCaptionAnchor() {
+        let captionMinY = 240.0
+        let captionHeight = 126.0
+        let toolbarExtraHeight = 56.0
+
+        for placement in [CaptionToolbarPlacement.above, .below] {
+            let visiblePanelMinY = CaptionPanelGeometry.panelMinY(
+                captionMinY: captionMinY,
+                controlsVisible: true,
+                placement: placement,
+                toolbarExtraHeight: toolbarExtraHeight
+            )
+            XCTAssertEqual(
+                CaptionPanelGeometry.captionMinY(
+                    panelMinY: visiblePanelMinY,
+                    controlsVisible: true,
+                    placement: placement,
+                    toolbarExtraHeight: toolbarExtraHeight
+                ),
+                captionMinY
+            )
+            XCTAssertEqual(
+                CaptionPanelGeometry.panelHeight(
+                    captionHeight: captionHeight,
+                    controlsVisible: true,
+                    toolbarExtraHeight: toolbarExtraHeight
+                ),
+                182
+            )
+        }
+
+        XCTAssertEqual(
+            CaptionPanelGeometry.panelMinY(
+                captionMinY: captionMinY,
+                controlsVisible: false,
+                placement: .below,
+                toolbarExtraHeight: toolbarExtraHeight
+            ),
+            captionMinY
+        )
+    }
+
     func testActiveLineGrowsWithoutReflowingCompletedLine() {
         let first = CaptionWindowing.rolling(
             committed: "one two three four five six seven eight nine ten eleven",
