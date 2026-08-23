@@ -10,6 +10,10 @@
 - Menu-bar source visual truth: `/var/folders/rm/99g7pxgn6d72plzypdcy18j40000gn/T/TemporaryItems/NSIRD_screencaptureui_lKDnwc/Screenshot 2026-08-23 at 6.28.47 AM.png` (504 × 806 px).
 - Rendered native Said menu header and status: [`docs/assets/said-menu-header.png`](docs/assets/said-menu-header.png).
 - Focused source/implementation comparison: [`docs/assets/said-menu-premium-comparison.png`](docs/assets/said-menu-premium-comparison.png). Klack's upper menu hierarchy is on the left; Said's real `NSSwitch`, header, and live-status components are on the right.
+- Compact-menu source visual truths: `/var/folders/rm/99g7pxgn6d72plzypdcy18j40000gn/T/TemporaryItems/NSIRD_screencaptureui_dO7qhc/Screenshot 2026-08-23 at 1.13.44 PM.png` (530 × 526 px) for the oversized Said menu and `/var/folders/rm/99g7pxgn6d72plzypdcy18j40000gn/T/TemporaryItems/NSIRD_screencaptureui_Dz2PKY/Screenshot 2026-08-23 at 1.13.52 PM.png` (518 × 826 px) for the compact Klack reference.
+- Revised native Said header/status render: [`docs/assets/said-menu-compact-header.png`](docs/assets/said-menu-compact-header.png) (520 × 132 px at 2× density; 260 × 66 pt).
+- Revised Off-state render: [`docs/assets/said-menu-compact-off.png`](docs/assets/said-menu-compact-off.png), confirming the switch and status indicator both return to neutral gray.
+- Density-normalized 260 × 38 pt header comparison: [`docs/assets/said-menu-compact-comparison.png`](docs/assets/said-menu-compact-comparison.png). Klack is on the left and revised Said is on the right at the same 2× density.
 - Verified states: all five caption-size presets, including Medium at 34 pt / 760 pt wide and Extra Large at 56 pt / 1,280 pt wide.
 
 The screenshot is the visual reference for a compact, neutral, single-row dark
@@ -27,7 +31,7 @@ without copying unrelated document actions.
 | Geometry | The caption card and toolbar remain separate surfaces. At the top of the display the toolbar renders below the captions; lower placement renders it above. Showing, hiding, or flipping the toolbar now preserves the caption card as the fixed global anchor. |
 | Surface rendering | The square material/shadow compositing regions visible in the supplied screenshots are gone. Both surfaces retain their rounded charcoal fill and subtle highlight border without a rectangular haze. |
 | Accessibility | The native tree exposes one Caption Size control, font, each color, and Done. The scale control announces its named size, point size, and complete five-step cycle. |
-| Menu hierarchy | A bold Said header and large native switch create one immediate on/off decision. A separate, quieter operational row uses a small semantic indicator and short status copy; actions remain ordinary native menu commands below it. |
+| Menu hierarchy | A compact semibold Said header and small native switch create one immediate on/off decision. A separate, quieter operational row uses a small semantic indicator and short status copy; actions remain ordinary native menu commands below it. |
 | Menu restraint | Said borrows the reference's clear product-name/switch header, dark native material, separators, and muted hierarchy without importing Klack's sound, theme, or decorative controls. The only status color is a small system semantic dot. |
 | Menu trust | Version, Settings, Privacy, and Quit remain visible and conventionally ordered. The switch changes the existing persisted caption state; it is not a visual-only control. |
 
@@ -47,6 +51,7 @@ without copying unrelated document actions.
 - Normal caption mode remains click-through after the hover grace period.
 - Forty-five deterministic tests and the privacy smoke pass.
 - The native menu preview path rendered the actual header and status view classes. On/off synchronization remains driven by `AppModel`, so menu state, caption visibility, capture state, tooltip, and filled/unfilled status icon cannot drift into separate preference values.
+- Both actual component states were rendered: On uses the scoped teal switch tint with green `Listening locally` status; Off uses the system-neutral switch track with gray `Captions are off` status. The tint is confined to the switch and does not change the user's global macOS accent color.
 
 ## Iteration history
 
@@ -65,10 +70,14 @@ without copying unrelated document actions.
 13. Added Mono and Block to the font cycle, then tightened their treatments after native review exposed clipping in the first expanded Block draft.
 14. The final Block preview preserves the complete caption at XS while remaining visibly heavier than Sans.
 15. Replaced silence-driven fading with a persistent Captions On surface and a quiet ready state; the latest caption now remains anchored until new speech or an explicit Captions Off action.
-16. Replaced the checked command item with a large native switch in a bold Said header, following the supplied Klack interaction reference.
+16. Replaced the checked command item with a native switch in a bold Said header, following the supplied Klack interaction reference.
 17. Added a restrained semantic status row: green while listening, orange while preparing, gray while off, and red only when attention is required.
 18. Added a muted version row and retained standard macOS commands and separators, preserving a compact 264-point menu rather than introducing a custom popover or dashboard.
 19. The final focused source/implementation comparison found no P0, P1, or P2 defect: hierarchy, native control choice, spacing, contrast, and interaction state are coherent with the reference while staying recognizably Said.
+20. A later real-menu comparison exposed a P2 density mismatch: Said's 52-point header, 17-point bold title, and large switch rendered materially taller and louder than Klack's 38-point header rhythm.
+21. Reduced the header to 38 points, title to 15-point semibold, and toggle to the small native SwiftUI switch style so it can use a per-control teal tint while `AppModel` remains the only source of truth.
+22. Reduced the status row to 28 points, removed one redundant separator, and changed `Settings…` to `Said Settings…` without a shortcut so macOS no longer injects the oversized special Settings icon/alignment treatment.
+23. The final density-normalized 260 × 38 point comparison shows matching header height, inset rhythm, title scale, switch scale, and teal On state. No actionable P0, P1, or P2 differences remain in the requested menu-header scope.
 
 ## Final result
 

@@ -6,7 +6,7 @@ final class StatusMenuItemView: NSView {
     private let titleLabel = NSTextField(labelWithString: "")
 
     override init(frame frameRect: NSRect) {
-        super.init(frame: NSRect(x: 0, y: 0, width: 264, height: 34))
+        super.init(frame: NSRect(x: 0, y: 0, width: 260, height: 28))
         configureView()
     }
 
@@ -21,7 +21,7 @@ final class StatusMenuItemView: NSView {
     }
 
     override var intrinsicContentSize: NSSize {
-        NSSize(width: 264, height: 34)
+        NSSize(width: 260, height: 28)
     }
 
     func update(title: String, color: NSColor) {
@@ -34,11 +34,11 @@ final class StatusMenuItemView: NSView {
         let symbol = NSImage(
             systemSymbolName: "circle.fill",
             accessibilityDescription: nil
-        )?.withSymbolConfiguration(.init(pointSize: 7, weight: .semibold))
+        )?.withSymbolConfiguration(.init(pointSize: 6, weight: .semibold))
         indicator.image = symbol
-        indicator.symbolConfiguration = .init(pointSize: 7, weight: .semibold)
+        indicator.symbolConfiguration = .init(pointSize: 6, weight: .semibold)
 
-        titleLabel.font = .systemFont(ofSize: 13, weight: .medium)
+        titleLabel.font = .systemFont(ofSize: 12.5, weight: .medium)
         titleLabel.textColor = .secondaryLabelColor
         titleLabel.lineBreakMode = .byTruncatingTail
 
@@ -54,9 +54,9 @@ final class StatusMenuItemView: NSView {
         NSLayoutConstraint.activate([
             indicator.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 15),
             indicator.centerYAnchor.constraint(equalTo: centerYAnchor),
-            indicator.widthAnchor.constraint(equalToConstant: 8),
-            indicator.heightAnchor.constraint(equalToConstant: 8),
-            titleLabel.leadingAnchor.constraint(equalTo: indicator.trailingAnchor, constant: 9),
+            indicator.widthAnchor.constraint(equalToConstant: 7),
+            indicator.heightAnchor.constraint(equalToConstant: 7),
+            titleLabel.leadingAnchor.constraint(equalTo: indicator.trailingAnchor, constant: 8),
             titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
