@@ -13,8 +13,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     private var visibilityTask: Task<Void, Never>?
     private var hoverDismissTask: Task<Void, Never>?
     private var hoverCancellable: AnyCancellable?
-    private var textSizeCancellable: AnyCancellable?
-    private var panelWidthCancellable: AnyCancellable?
+    private var scaleCancellable: AnyCancellable?
     private var visibilityEpoch = 0
     private var isApplyingAnchoredFrame = false
 
@@ -34,8 +33,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         configurePanel()
         installContent()
         restoreLayout()
-        observeTextSize()
-        observePanelWidth()
+        observeScale()
     }
 
     func showPreview() {
@@ -232,7 +230,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         defaults.removeObject(forKey: Keys.legacyWidth)
         defaults.removeObject(forKey: Keys.screenIdentifier)
         guard let screen = activeScreen() else { return }
-        model.captionPanelWidth = .medium
+        model.captionScale = .medium
         let width = resolvedWidth(for: .medium, on: screen)
         let visibleFrame = screen.visibleFrame
         let captionFrame = NSRect(
@@ -252,12 +250,13 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         )
     }
 
-    private func setPanelWidth(_ choice: CaptionPanelWidth) {
+    private func resizePanel(for scale: CaptionScale) {
         guard let screen = panel.screen ?? activeScreen() else { return }
-        let width = resolvedWidth(for: choice, on: screen)
+        let width = resolvedWidth(for: scale.panelWidth, on: screen)
         var captionFrame = currentCaptionFrame
         let centerX = captionFrame.midX
         captionFrame.size.width = width
+        captionFrame.size.height = scale.textSize.panelHeight
         captionFrame.origin.x = centerX - width / 2
         captionFrame.origin.x = min(
             max(captionFrame.origin.x, screen.visibleFrame.minX),
@@ -346,30 +345,10 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 
-    private func observeTextSize() {
-        textSizeCancellable = model.$captionTextSize
+    private func observeScale() {
+        scaleCancellable = model.$captionScale
             .dropFirst()
-            .sink { [weak self] size in self?.resizePanel(for: size) }
-    }
-
-    private func observePanelWidth() {
-        panelWidthCancellable = model.$captionPanelWidth
-            .dropFirst()
-            .sink { [weak self] width in self?.setPanelWidth(width) }
-    }
-
-    private func resizePanel(for size: CaptionTextSize) {
-        var captionFrame = currentCaptionFrame
-        captionFrame.size.height = size.panelHeight
-        let placement = model.captionControlsMode.isVisible
-            ? toolbarPlacement(for: captionFrame)
-            : model.captionToolbarPlacement
-        model.captionToolbarPlacement = placement
-        applyPanelFrame(
-            anchoredTo: captionFrame,
-            controlsVisible: model.captionControlsMode.isVisible,
-            placement: placement
-        )
+            .sink { [weak self] scale in self?.resizePanel(for: scale) }
     }
 
     private static func panelSize(for textSize: CaptionTextSize, width: Double) -> NSSize {

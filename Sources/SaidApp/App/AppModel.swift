@@ -17,8 +17,8 @@ final class AppModel: ObservableObject {
     @Published var audioLevel = 0.0
     @Published private(set) var launchAtLoginEnabled = false
     @Published private(set) var launchAtLoginError: String?
-    @Published var captionTextSize: CaptionTextSize {
-        didSet { defaults.set(captionTextSize.rawValue, forKey: Keys.captionTextSize) }
+    @Published var captionScale: CaptionScale {
+        didSet { defaults.set(captionScale.rawValue, forKey: Keys.captionScale) }
     }
     @Published var captionFontStyle: CaptionFontStyle {
         didSet { defaults.set(captionFontStyle.rawValue, forKey: Keys.captionFontStyle) }
@@ -26,9 +26,8 @@ final class AppModel: ObservableObject {
     @Published var captionTextColor: CaptionTextColor {
         didSet { defaults.set(captionTextColor.rawValue, forKey: Keys.captionTextColor) }
     }
-    @Published var captionPanelWidth: CaptionPanelWidth {
-        didSet { defaults.set(captionPanelWidth.rawValue, forKey: Keys.captionPanelWidth) }
-    }
+    var captionTextSize: CaptionTextSize { captionScale.textSize }
+    var captionPanelWidth: CaptionPanelWidth { captionScale.panelWidth }
 
     var onResetCaptionLayout: (() -> Void)?
     var onReinstallModel: (() -> Void)?
@@ -45,7 +44,7 @@ final class AppModel: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         captionsEnabled = defaults.object(forKey: Keys.captionsEnabled) as? Bool ?? true
-        captionTextSize = CaptionTextSize(
+        let storedTextSize = CaptionTextSize(
             rawValue: defaults.string(forKey: Keys.captionTextSize) ?? ""
         ) ?? .standard
         captionFontStyle = CaptionFontStyle(
@@ -54,15 +53,20 @@ final class AppModel: ObservableObject {
         captionTextColor = CaptionTextColor(
             rawValue: defaults.string(forKey: Keys.captionTextColor) ?? ""
         ) ?? .white
+        let storedPanelWidth: CaptionPanelWidth
         if let stored = defaults.string(forKey: Keys.captionPanelWidth),
            let width = CaptionPanelWidth(rawValue: stored) {
-            captionPanelWidth = width
+            storedPanelWidth = width
         } else if defaults.object(forKey: Keys.legacyCaptionWidth) != nil {
-            captionPanelWidth = .nearest(to: defaults.double(forKey: Keys.legacyCaptionWidth))
+            storedPanelWidth = .nearest(to: defaults.double(forKey: Keys.legacyCaptionWidth))
         } else {
-            captionPanelWidth = .medium
+            storedPanelWidth = .medium
         }
+        captionScale = CaptionScale(
+            rawValue: defaults.string(forKey: Keys.captionScale) ?? ""
+        ) ?? .nearest(textSize: storedTextSize, panelWidth: storedPanelWidth)
         launchAtLoginEnabled = SMAppService.mainApp.status == .enabled
+        defaults.set(captionScale.rawValue, forKey: Keys.captionScale)
     }
 
     func resetCaptionLayout() {
@@ -72,9 +76,6 @@ final class AppModel: ObservableObject {
     func setCaptionsEnabled(_ enabled: Bool) {
         captionsEnabled = enabled
     }
-
-    func decreaseCaptionTextSize() { captionTextSize = captionTextSize.smaller }
-    func increaseCaptionTextSize() { captionTextSize = captionTextSize.larger }
 
     func reinstallModel() { onReinstallModel?() }
     func removeModel() { onRemoveModel?() }
@@ -118,6 +119,7 @@ final class AppModel: ObservableObject {
 
     private enum Keys {
         static let captionsEnabled = "captionsEnabled"
+        static let captionScale = "captionScale"
         static let captionTextSize = "captionTextSize"
         static let captionFontStyle = "captionFontStyle"
         static let captionTextColor = "captionTextColor"

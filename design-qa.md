@@ -4,9 +4,9 @@
 
 - Source visual truth: `/var/folders/rm/99g7pxgn6d72plzypdcy18j40000gn/T/TemporaryItems/NSIRD_screencaptureui_bjEBbV/Screenshot 2026-08-22 at 2.53.28 PM.png` (2222 × 160 px).
 - Additional source visual truth: `/Users/redbars/Desktop/Screenshot 2026-08-22 at 7.46.55 PM.png` (900 × 389 px), showing the unwanted rectangular material/shadow regions around both rounded surfaces.
-- Current native implementation capture: `/private/tmp/said-caption-anchor-fixed.png`.
-- Latest same-input visual comparison: [`docs/assets/caption-anchor-comparison.png`](docs/assets/caption-anchor-comparison.png). The supplied artifact state is above and the fixed native Said preview is below.
-- Verified state: 14 pt Sans, Warm Yellow, XS width selected, hover controls below the captions.
+- Current native implementation captures: `/private/tmp/said-unified-scale-medium.png` and `/private/tmp/said-unified-scale-xl.png`.
+- Latest same-input visual comparison: [`docs/assets/caption-unified-scale-comparison.png`](docs/assets/caption-unified-scale-comparison.png). The prior separate controls are above and the unified native Said control is below.
+- Verified states: all five caption-size presets, including Medium at 34 pt / 760 pt wide and Extra Large at 56 pt / 1,280 pt wide.
 
 The screenshot is the visual reference for a compact, neutral, single-row dark
 formatting bar. Said adapts its density and direct-value controls to captions
@@ -16,27 +16,27 @@ without copying unrelated document actions.
 
 | Surface | Result |
 | --- | --- |
-| Typography | Current values are directly readable as `14px`, `Aa Sans`, and `XS`; the controls no longer depend on unlabeled arrow targets. |
-| Spacing | Move, text size, font, color, width, and Done form one compact left-aligned cluster with consistent separators. XS still fits without a second row. |
+| Typography | One compact value such as `M 34px` communicates the active caption scale. Font remains a separate typographic choice because it does not alter geometry. |
+| Spacing | Move, caption scale, font, color, and Done form one shorter left-aligned cluster with consistent separators. The redundant second size control is gone. |
 | Color | The neutral charcoal surface follows the reference. White, warm yellow, and cyan remain direct choices with a clear selected ring. |
 | Icons/assets | The only icon is the native move affordance. Sizing uses readable values instead of approximate resize imagery. |
 | Geometry | The caption card and toolbar remain separate surfaces. At the top of the display the toolbar renders below the captions; lower placement renders it above. Showing, hiding, or flipping the toolbar now preserves the caption card as the fixed global anchor. |
 | Surface rendering | The square material/shadow compositing regions visible in the supplied screenshots are gone. Both surfaces retain their rounded charcoal fill and subtle highlight border without a rectangular haze. |
-| Accessibility | The native tree exposes point size, font, each color, width value, and Done. Size and width buttons announce their full cycling ranges. |
+| Accessibility | The native tree exposes one Caption Size control, font, each color, and Done. The scale control announces its named size, point size, and complete five-step cycle. |
 
 ## Interaction evidence
 
-- Clicking the point-size value was exercised through `26 → 34 → 44 → 56 → 14`; the card height followed the selection.
-- The complete text-size cycle is 14, 18, 22, 26, 34, 44, and 56 points.
-- Clicking the width value was exercised through `S → M → L → XL → XS`; no drag target remains.
-- Width choices map to substantially different requested widths and clamp safely to the current display.
+- The single control was exercised through `XS → S → M → L → XL` in the running native app.
+- Presets pair text and requested window width as `14/360`, `22/520`, `34/760`, `44/1000`, and `56/1280` points.
+- Every preset retains approximately six or seven words per line, avoiding a tiny typeface in a huge strip or giant type in a cramped box.
+- Requested widths still clamp safely to the current display.
 - Moving the panel is still available from the panel background while controls are visible.
 - A deterministic placement policy puts the toolbar below captions in the upper display half and above them in the lower half.
 - Core Graphics reported the caption-only window at `X 639, Y 195, 360 × 72` and the hover window at `X 639, Y 195, 360 × 128`; the caption card's top-left screen coordinate is unchanged while the toolbar is added below it.
 - The saved normalized position is calculated from the caption card rather than the temporarily expanded toolbar window.
-- Font, color, width, and point-size selections persist as ordinary local settings.
+- Caption scale, font, and color persist as ordinary local settings. Existing independent text/width preferences migrate to the nearest unified preset.
 - Normal caption mode remains click-through after the hover grace period.
-- Forty-two deterministic tests and the privacy smoke pass.
+- Forty-four deterministic tests and the privacy smoke pass.
 
 ## Iteration history
 
@@ -45,10 +45,13 @@ without copying unrelated document actions.
 3. Replaced it with one clickable current-value label and expanded XS–XL to a much wider 360–1280 point requested range.
 4. Replaced font-size arrows with the same current-value interaction and expanded the range down to 14 points and up to 56 points.
 5. Removed trailing alignment, kept the control cluster left-facing, and added automatic above/below toolbar placement based on display position.
-6. The final comparison found no actionable P0, P1, or P2 visual defects. The cursor highlight on the width value is an intentional hovered state.
+6. The final comparison found no actionable P0, P1, or P2 visual defects. The cursor highlight on the size value is an intentional hovered state.
 7. Anchored toolbar expansion to the caption card so hover no longer moves the user's dragged subtitle position.
 8. Removed the translucent material and broad SwiftUI shadows that produced rectangular compositing blocks behind the rounded surfaces.
 9. The latest source/implementation comparison found no remaining P0, P1, or P2 defect in the requested anchor and surface treatment.
+10. Replaced independent text-size and window-width controls with one five-step Caption Size preset.
+11. Tuned each preset to retain a consistent readable word count while preserving the existing XS–XL physical range and Medium default.
+12. The final native click-through and combined source/implementation comparison found no actionable P0, P1, or P2 defects.
 
 ## Final result
 

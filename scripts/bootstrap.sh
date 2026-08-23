@@ -44,14 +44,22 @@ macos_major=${macos_version%%.*}
   exit 1
 }
 
-xcode_version=$(xcodebuild -version | awk '/^Xcode / { print $2; exit }')
+# Let each producer drain completely under pipefail. Early-exit consumers can
+# otherwise turn a successful version check into SIGPIPE (exit 141) in CI.
+xcode_version=$(xcodebuild -version | awk '/^Xcode / && !found { print $2; found=1 }')
 xcode_major=${xcode_version%%.*}
 (( xcode_major >= 26 )) || {
   print -u2 "Said requires Xcode 26 or later; found $xcode_version"
   exit 1
 }
 
-swift_version=$(swift --version 2>&1 | sed -n 's/.*Swift version \([0-9][0-9]*\).*/\1/p' | head -1)
+swift_version=$(swift --version 2>&1 | awk '
+  match($0, /Swift version [0-9]+/) && !found {
+    value=substr($0, RSTART + 14, RLENGTH - 14)
+    print value
+    found=1
+  }
+')
 [[ -n "$swift_version" ]] || {
   print -u2 "Could not determine the installed Swift version"
   exit 1

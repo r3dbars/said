@@ -127,14 +127,17 @@ caption strip is visible.
 
 Default placement is horizontally centered roughly 64 points above the active
 display's visible bottom. Persist normalized display-relative placement, the
-chosen display when it remains connected, and the user's caption-strip width.
+chosen display when it remains connected, and the user's caption scale.
 
-The panel has a fixed two-line height, default width near 760 points. Its five
-width states are approximately 360, 520, 760, 1000, and 1280 points, clamped to
-no more than about 90% of the active display. Use 24-point horizontal and 17–20-point
-vertical padding, and about a 20–22-point radius. Use a dark neutral native
-material, near-white text, subtle border/shadow, and an opaque high-contrast
-fallback for Reduce Transparency or Increase Contrast.
+The panel has five paired caption-scale presets. XS through XL use approximately
+14/360, 22/520, 34/760, 44/1000, and 56/1280 point text/width combinations,
+with width clamped to no more than about 90% of the active display. The pairings
+keep roughly six or seven words on each line instead of allowing type and window
+proportions to drift independently. Use 24-point horizontal and 17–20-point
+vertical padding, and about a 20–22-point radius. Use a dark neutral rounded
+surface, near-white text, and a subtle highlight border without a broad shadow
+or rectangular material-compositing region. Use an opaque high-contrast fallback
+for Reduce Transparency or Increase Contrast.
 
 Typography starts at 34 pt medium/semibold with Small 26 pt and Large 44 pt.
 Committed text is full opacity. Tentative text uses the same type at roughly
@@ -142,11 +145,11 @@ Committed text is full opacity. Tentative text uses the same type at roughly
 colored hypotheses, springs, or per-character animation.
 
 The hover/placement caption-control bar offers three intentionally small appearance
-sets: Small/Default/Large text, Rounded/Sans/Serif system fonts, and
-White/Warm Yellow/Cyan text. Size and font changes are one-click cycles; color
-swatches are direct one-click choices. Tentative text uses the selected color
-at reduced opacity rather than a different semantic hue. All choices persist
-as ordinary app settings.
+sets: one XS–XL Caption Size control that changes type and panel geometry together,
+Rounded/Sans/Serif system fonts, and White/Warm Yellow/Cyan text. Size and font
+changes are one-click cycles; color swatches are direct one-click choices.
+Tentative text uses the selected color at reduced opacity rather than a different
+semantic hue. All choices persist as ordinary app settings.
 
 Show on first text. Hold 1.8 seconds after final revision, then fade over about
 180 ms; cancel a fade immediately when new text arrives. Respect Reduce Motion.
@@ -162,15 +165,15 @@ continuous pixel scrolling, or a history drawer.
 
 Hovering visible captions makes the whole panel draggable and adds a compact
 dark control bar outside—not inside—the caption surface. Its controls form one
-left-aligned cluster. Clicking the visible point-size value cycles 14, 18, 22,
-26, 34, 44, and 56 point text. Clicking the visible XS, S, M, L, or XL value
-cycles the five width states. Font and color remain direct compact controls.
+left-aligned cluster. Clicking the visible XS, S, M, L, or XL Caption Size value
+cycles the five paired text/window presets. The control also shows the active
+point size so its effect remains legible. Font and color remain direct compact controls.
 The bar collapses shortly after
 the pointer leaves and captions return to click-through behavior. The menu-bar
 Customize Captions mode remains available during silence, shows a sample, and adds
-an explicit Done control. Width changes snap immediately, remain centered when
-space allows, persist across launches, and clamp to the product/display bounds,
-while text size controls the fixed two-line height. When the panel moves into
+an explicit Done control. Scale changes snap immediately, remain centered when
+space allows, persist across launches, and clamp to the product/display bounds.
+When the panel moves into
 the upper half of its display, place the toolbar below the caption card; place
 it above the card in the lower half. Settings contains caption
 size, Reset Caption Layout, native
@@ -394,6 +397,7 @@ long-run memory cannot be bounded.
 | 2026-08-22 | Add a persistent menu-bar Captions On toggle | People need an unmistakable indication of when captions should appear. Off stops capture, clears the panel, and persists across relaunches; the checkmark, status copy, and icon treatment all expose the state. |
 | 2026-08-22 | Replace freeform width dragging with XS–XL width steps | The narrow drag target was hard to acquire and produced unpredictable sizing. A bounded click control is easier to understand, accessible from hover or menu customization, and persists deterministically. |
 | 2026-08-22 | Make size labels cycle directly and flip the toolbar by vertical position | Removing arrow targets makes sizing behave like the compact reference toolbar. Keeping controls left-aligned reduces eye travel, while moving the toolbar below top-positioned captions prevents it from obstructing or being pushed off-screen. |
+| 2026-08-22 | Combine text and window size into one XS–XL Caption Size setting | Independent size controls allowed awkward combinations and added unnecessary choice. Five balanced presets preserve the useful physical range, keep line length consistent, and make the toolbar shorter and easier to understand. |
 
 ## Definition of done
 

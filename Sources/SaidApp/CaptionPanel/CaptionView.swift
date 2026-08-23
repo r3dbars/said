@@ -31,13 +31,11 @@ struct CaptionView: View {
                 .help("Drag the bar or caption strip to move it")
 
             Divider().frame(height: 18)
-            sizeControls
+            scaleControl
             Divider().frame(height: 18)
             fontMenu
             Divider().frame(height: 18)
             colorControls
-            Divider().frame(height: 18)
-            widthControls
             if model.captionControlsMode.showsDoneButton {
                 Button("Done", action: onDone)
                     .buttonStyle(.borderedProminent)
@@ -94,17 +92,30 @@ struct CaptionView: View {
         .accessibilityLabel(model.visibleCaptionText)
     }
 
-    private var sizeControls: some View {
-        Button { model.captionTextSize = model.captionTextSize.next } label: {
-            Text("\(Int(model.captionTextSize.pointSize))px")
-                .font(.caption.monospacedDigit().weight(.semibold))
-                .frame(minWidth: 34)
+    private var scaleControl: some View {
+        Button { model.captionScale = model.captionScale.next } label: {
+            HStack(spacing: 5) {
+                Text(model.captionScale.title)
+                    .font(.caption.monospaced().weight(.bold))
+                Text("\(Int(model.captionTextSize.pointSize))px")
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 7)
+            .frame(height: 26)
+            .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
         }
         .buttonStyle(.plain)
-        .help("Caption text size: \(model.captionTextSize.title). Click to change.")
-        .accessibilityLabel("Caption text size")
-        .accessibilityValue("\(Int(model.captionTextSize.pointSize)) points")
-        .accessibilityHint("Cycles through 14, 18, 22, 26, 34, 44, and 56 points")
+        .help(
+            "Caption size: \(model.captionScale.accessibilityTitle), "
+                + "\(Int(model.captionTextSize.pointSize)) point text. Click to change."
+        )
+        .accessibilityLabel("Caption size")
+        .accessibilityValue(
+            "\(model.captionScale.accessibilityTitle), "
+                + "\(Int(model.captionTextSize.pointSize)) point text"
+        )
+        .accessibilityHint("Cycles through Extra Small, Small, Medium, Large, and Extra Large")
     }
 
     private var fontMenu: some View {
@@ -145,22 +156,6 @@ struct CaptionView: View {
                 .accessibilityValue(choice == model.captionTextColor ? "Selected" : "")
             }
         }
-    }
-
-    private var widthControls: some View {
-        Button { model.captionPanelWidth = model.captionPanelWidth.next } label: {
-            Text(model.captionPanelWidth.title)
-                .font(.caption.monospaced().weight(.bold))
-                .frame(minWidth: 24)
-                .padding(.horizontal, 5)
-                .frame(height: 26)
-                .background(.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 7))
-        }
-        .buttonStyle(.plain)
-        .help("Caption window: \(model.captionPanelWidth.accessibilityTitle). Click to change.")
-        .accessibilityLabel("Caption window width")
-        .accessibilityValue(model.captionPanelWidth.accessibilityTitle)
-        .accessibilityHint("Cycles through Extra Small, Small, Medium, Large, and Extra Large")
     }
 
     @ViewBuilder
