@@ -165,7 +165,7 @@ final class AppController {
         sleepStopTask = nil
         Task { [weak self, weak audioCapture] in
             await pendingStop?.value
-            guard let self, self.model.modelState == .ready else { return }
+            guard let self, self.model.modelState == .ready, self.model.captionsEnabled else { return }
             SaidLogger.capture.info("Restarting caption pipeline after system wake")
             audioCapture?.start(modelURL: modelURL)
         }
