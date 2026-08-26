@@ -16,8 +16,7 @@ public actor ParakeetUnifiedASR: StreamingASREngine {
     private var model: Model?
     private var session: Session?
     private var stream: TranscribeCpp.Stream?
-    private var previousCommitted = ""
-    private var lastRevision: Int32 = -1
+    private var prefixRevisionGate = ASRPrefixRevisionGate()
 
     public init(modelPath: String) {
         self.modelPath = modelPath
@@ -52,21 +51,23 @@ public actor ParakeetUnifiedASR: StreamingASREngine {
                 family: Self.familyOptions
             )
         )
-        previousCommitted = ""
-        lastRevision = -1
+        prefixRevisionGate.reset()
     }
 
     public func feed(_ block: PCMBlock) async throws -> ASRTextSnapshot? {
         guard let stream else { throw ParakeetASRError.streamNotStarted }
         let update = try stream.feed(block.samples)
-        guard update.resultChanged, update.revision != lastRevision else { return nil }
+        guard prefixRevisionGate.shouldEmit(
+            resultChanged: update.resultChanged,
+            revision: update.revision
+        ) else { return nil }
         let text = stream.text
-        guard text.committed.hasPrefix(previousCommitted) else {
+        do {
+            try prefixRevisionGate.commit(text.committed, revision: update.revision)
+        } catch {
             stream.reset()
-            throw ParakeetASRError.committedPrefixMutation
+            throw error
         }
-        previousCommitted = text.committed
-        lastRevision = update.revision
         return ASRTextSnapshot(
             committed: text.committed,
             tentative: text.tentative,
@@ -80,8 +81,7 @@ public actor ParakeetUnifiedASR: StreamingASREngine {
     public func resetStream() async {
         stream?.reset()
         stream = nil
-        previousCommitted = ""
-        lastRevision = -1
+        prefixRevisionGate.reset()
     }
 
     public func unloadModel() async {

@@ -45,5 +45,9 @@ let package = Package(
             name: "SaidModelTests",
             dependencies: ["SaidModel", "SaidCore"]
         ),
+        .testTarget(
+            name: "SaidASRTests",
+            dependencies: ["SaidASR", "SaidCore"]
+        ),
     ]
 )
