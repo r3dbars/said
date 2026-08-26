@@ -29,6 +29,10 @@
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/code-MIT-111318"></a>
 </p>
 
+<p align="center">
+  Said requires macOS 26 because it captions through the system-audio tap, not the microphone.
+</p>
+
 <p align="center"><em>Hear. Read. Gone.</em></p>
 
 <p align="center">
