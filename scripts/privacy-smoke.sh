@@ -13,6 +13,10 @@ fail() {
   exit 1
 }
 
+if ! command -v rg >/dev/null 2>&1; then
+  fail "rg (ripgrep) is required"
+fi
+
 plist_value=$(/usr/libexec/PlistBuddy -c 'Print :NSAudioCaptureUsageDescription' "$plist")
 [[ -n "$plist_value" ]] || fail "missing System Audio usage copy"
 
