@@ -357,9 +357,6 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
                   recoveryAttempts < Self.maximumRecoveryAttempts,
                   bufferHandler != nil
             else {
-                if operationEpoch.owns(captureGeneration) {
-                    internalState = .failed(.stalled)
-                }
                 return false
             }
             recoveryInFlight = true
@@ -452,7 +449,9 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             status = nil
         }
         if status == kAudioDevicePermissionsError
-            || status == kAudioComponentErr_NotPermitted {
+            || status == kAudioComponentErr_NotPermitted
+            || status == kAudioHardwareIllegalOperationError
+            || status == kAudioHardwareBadObjectError {
             return .permissionDenied
         }
         return .unavailable
