@@ -27,6 +27,10 @@ if rg -n 'import ScreenCaptureKit|\bSCStream\b|AVAudioRecorder|requestRecordPerm
   fail "a prohibited screen, microphone-recording, or clipboard API appears in the shipping path"
 fi
 
+if rg -n 'Privacy_ScreenCapture' "$repo_root/Sources"; then
+  fail "Privacy_ScreenCapture appears in Sources"
+fi
+
 if rg -n 'Sentry|Crashlytics|TelemetryDeck|Mixpanel|Amplitude|PostHog' \
   "$repo_root/Package.swift" "$repo_root/Sources"; then
   fail "a prohibited analytics or crash-reporting SDK appears in the shipping path"
@@ -65,7 +69,7 @@ swift build --product Said >/dev/null
 binary="$(swift build --show-bin-path)/Said"
 [[ -x "$binary" ]] || fail "Said executable was not produced"
 
-if strings "$binary" | rg -q 'NSMicrophoneUsageDescription|NSScreenCaptureUsageDescription'; then
+if strings "$binary" | rg -q 'NSMicrophoneUsageDescription|NSScreenCaptureUsageDescription|Privacy_ScreenCapture'; then
   fail "forbidden permission string is embedded in Said"
 fi
 

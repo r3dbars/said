@@ -1,4 +1,5 @@
 import AppKit
+import SaidCore
 
 @MainActor
 final class AppController {
@@ -84,10 +85,7 @@ final class AppController {
             settingsWindow?.showDiagnostics()
         }
         model.onOpenSystemAudioSettings = {
-            guard let url = URL(
-                string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
-            ) else { return }
-            NSWorkspace.shared.open(url)
+            NSWorkspace.shared.open(SystemAudioSettingsURL.url)
         }
         installWorkspaceObservers()
     }
