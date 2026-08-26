@@ -22,38 +22,50 @@ for forbidden_key in NSMicrophoneUsageDescription NSScreenCaptureUsageDescriptio
   fi
 done
 
-if rg -n 'import ScreenCaptureKit|\bSCStream\b|AVAudioRecorder|requestRecordPermission|NSPasteboard' \
-  "$repo_root/Sources/SaidApp" "$repo_root/Sources/SaidCapture"; then
-  fail "a prohibited screen, microphone-recording, or clipboard API appears in the shipping path"
-fi
+python3 - "$repo_root" <<'PY' || fail "source privacy patterns failed"
+import re, sys
+from pathlib import Path
+root = Path(sys.argv[1])
 
-if rg -n 'Privacy_ScreenCapture' "$repo_root/Sources"; then
-  fail "Privacy_ScreenCapture appears in Sources"
-fi
+def files(*parts):
+    out = []
+    for part in parts:
+        p = root / part
+        if p.is_file():
+            out.append(p)
+        elif p.is_dir():
+            out.extend(q for q in p.rglob("*") if q.is_file())
+    return out
 
-if rg -n 'Sentry|Crashlytics|TelemetryDeck|Mixpanel|Amplitude|PostHog' \
-  "$repo_root/Package.swift" "$repo_root/Sources"; then
-  fail "a prohibited analytics or crash-reporting SDK appears in the shipping path"
-fi
+def search(paths, pattern, flags=0):
+    rx = re.compile(pattern, flags)
+    hits = []
+    for path in paths:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        if rx.search(text):
+            hits.append(str(path))
+    return hits
 
-# Model installation is the only shipping network implementation. Opening the
-# public GitHub Releases page is an explicit user action delegated to the
-# browser; capture, normalization, inference, core state, and UI must not own a
-# networking API.
-if rg -n 'URLSession|URLRequest|import Network|NWConnection|NWPathMonitor|WebSocket|CFNetwork' \
-  "$repo_root/Sources/SaidApp" \
-  "$repo_root/Sources/SaidASR" \
-  "$repo_root/Sources/SaidCapture" \
-  "$repo_root/Sources/SaidCore"; then
-  fail "a networking API appears outside the model-installation boundary"
-fi
-
-# Caption values may be measured by length, but must never be interpolated as
-# content into SaidLogger calls.
-if rg -UP 'SaidLogger\.[a-z]+\((?:(?!\)\n).)*(snapshot\.(committed|tentative)(?!\.count)|model\.(captionWindow|visibleCaptionText))' \
-  "$repo_root/Sources/SaidApp"; then
-  fail "caption content can reach a logger call"
-fi
+if search(files("Sources/SaidApp", "Sources/SaidCapture"),
+          r"import ScreenCaptureKit|\bSCStream\b|AVAudioRecorder|requestRecordPermission|NSPasteboard"):
+    raise SystemExit("prohibited capture/clipboard API")
+if search(files("Sources"), r"Privacy_ScreenCapture"):
+    raise SystemExit("Privacy_ScreenCapture")
+if search(files("Package.swift", "Sources"),
+          r"Sentry|Crashlytics|TelemetryDeck|Mixpanel|Amplitude|PostHog"):
+    raise SystemExit("analytics SDK")
+if search(files("Sources/SaidApp", "Sources/SaidASR", "Sources/SaidCapture", "Sources/SaidCore"),
+          r"URLSession|URLRequest|import Network|NWConnection|NWPathMonitor|WebSocket|CFNetwork"):
+    raise SystemExit("network API outside model install")
+if search(files("Sources/SaidApp"),
+          r"SaidLogger\.[a-z]+\((?:(?!\)\n).)*(snapshot\.(committed|tentative)(?!\.count)|model\.(captionWindow|visibleCaptionText))",
+          re.S):
+    raise SystemExit("caption logger interpolation")
+print("source patterns ok")
+PY
 
 if [[ -d "$app_support" ]]; then
   content_file=$(find "$app_support" -type f \( \
@@ -69,7 +81,7 @@ swift build --product Said >/dev/null
 binary="$(swift build --show-bin-path)/Said"
 [[ -x "$binary" ]] || fail "Said executable was not produced"
 
-if strings "$binary" | rg -q 'NSMicrophoneUsageDescription|NSScreenCaptureUsageDescription|Privacy_ScreenCapture'; then
+if strings "$binary" | grep -E -q 'NSMicrophoneUsageDescription|NSScreenCaptureUsageDescription|Privacy_ScreenCapture'; then
   fail "forbidden permission string is embedded in Said"
 fi
 
