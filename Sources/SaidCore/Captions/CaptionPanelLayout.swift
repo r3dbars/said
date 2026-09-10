@@ -1,9 +1,10 @@
 public enum CaptionPanelLayout {
-    public static let defaultWidth = 760.0
-    public static let minimumWidth = 360.0
-    public static let maximumWidth = 1_280.0
+    public static let defaultWidth = 440.0
+    public static let fixedCaptionWidth = 520.0
+    public static let minimumWidth = 300.0
+    public static let maximumWidth = 640.0
     public static let maximumScreenFraction = 0.90
-    public static let editingToolbarExtraHeight = 56.0
+    public static let editingToolbarExtraHeight = CaptionToolbarLayout.height + CaptionToolbarLayout.gap
 
     public static func clampedWidth(
         _ requestedWidth: Double,
@@ -22,13 +23,13 @@ public enum CaptionPanelLayout {
     ) -> Int {
         let defaultCapacity: Int
         switch textSize {
-        case .tiny: defaultCapacity = 16
-        case .extraSmall: defaultCapacity = 13
-        case .compact: defaultCapacity = 11
-        case .small: defaultCapacity = 9
+        case .tiny: defaultCapacity = 12
+        case .extraSmall: defaultCapacity = 11
+        case .compact: defaultCapacity = 9
+        case .small: defaultCapacity = 8
         case .standard: defaultCapacity = 7
-        case .large: defaultCapacity = 5
-        case .extraLarge: defaultCapacity = 4
+        case .large: defaultCapacity = 6
+        case .extraLarge: defaultCapacity = 5
         }
         let scaled = Double(defaultCapacity) * width / defaultWidth
         return max(2, Int(scaled.rounded(.down)))

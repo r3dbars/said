@@ -13,16 +13,21 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     private var hoverDismissTask: Task<Void, Never>?
     private var hoverCancellable: AnyCancellable?
     private var scaleCancellable: AnyCancellable?
+    private var toolbarFocusCancellable: AnyCancellable?
+    private var outsideClickMonitor: Any?
+    private var localClickMonitor: Any?
+    private var captionLayoutPrefix: [String]?
+    private var latestSnapshot: ASRTextSnapshot?
     private var captionBeforePlacement: CaptionWindow?
     private var isApplyingAnchoredFrame = false
 
     init(model: AppModel) {
         self.model = model
         let initialSize = Self.panelSize(
-            for: model.captionTextSize,
-            width: model.captionPanelWidth.preferredWidth
+            style: model.captionFontStyle,
+            width: CaptionPanelLayout.fixedCaptionWidth
         )
-        panel = NSPanel(
+        panel = CaptionInteractionPanel(
             contentRect: NSRect(origin: .zero, size: initialSize),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
@@ -33,13 +38,29 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         installContent()
         restoreLayout()
         observeScale()
+        toolbarFocusCancellable = model.$captionToolbarSection.dropFirst().sink { [weak self] section in
+            guard let self else { return }
+            if section != .none {
+                self.panel.makeKey()
+            } else if self.panel.isKeyWindow {
+                self.panel.resignKey()
+            }
+        }
+        installDismissalMonitoring()
+    }
+
+    isolated deinit {
+        if let outsideClickMonitor { NSEvent.removeMonitor(outsideClickMonitor) }
+        if let localClickMonitor { NSEvent.removeMonitor(localClickMonitor) }
     }
 
     func showPreview() {
+        latestSnapshot = nil
+        captionLayoutPrefix = nil
         model.captionWindow = CaptionWindow(lines: [
             CaptionLine(
                 id: 0,
-                committed: "Live captions for anything your Mac plays.",
+                committed: "Live captions.",
                 tentative: ""
             ),
             CaptionLine(id: 1, committed: "", tentative: "Nothing is uploaded."),
@@ -68,6 +89,8 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
 
     func showReady() {
         guard model.captionControlsMode != .placement else { return }
+        latestSnapshot = nil
+        captionLayoutPrefix = nil
         model.captionWindow = .empty
         hideControlsPreservingCaptionAnchor()
         panel.ignoresMouseEvents = true
@@ -79,21 +102,36 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
 
     func show(_ snapshot: ASRTextSnapshot) {
         guard model.captionControlsMode.acceptsLiveCaptions else { return }
-        model.captionWindow = CaptionWindowing.rolling(
-            committed: snapshot.committed,
-            tentative: snapshot.tentative,
-            wordsPerLine: wordsPerLine
-        )
+        latestSnapshot = snapshot
+        reflowLatestCaption(size: model.captionTextSize, style: model.captionFontStyle)
         panel.ignoresMouseEvents = !model.captionControlsMode.isVisible
         panel.orderFrontRegardless()
         panel.alphaValue = 1
         startHoverMonitoring()
     }
 
-    private var wordsPerLine: Int {
-        CaptionPanelLayout.wordsPerLine(
-            width: panel.frame.width,
-            textSize: model.captionTextSize
+    private func reflowLatestCaption(size: CaptionTextSize, style: CaptionFontStyle,
+                                     resetAnchor: Bool = false) {
+        let committed: String
+        let tentative: String
+        if model.captionControlsMode == .placement {
+            committed = "Move these captions wherever you like. Pick the text size that feels comfortable. Smaller text fits more words in the same space."
+            tentative = ""
+        } else if let snapshot = latestSnapshot {
+            committed = snapshot.committed
+            tentative = snapshot.tentative
+        } else { return }
+        let text = committed + " " + tentative
+        let words = text.split(whereSeparator: \Character.isWhitespace).map(String.init)
+        if resetAnchor || captionLayoutPrefix == nil || !words.starts(with: captionLayoutPrefix ?? []) {
+            let origin = CaptionFonts.filledRowOrigin(
+                text: text, width: panel.frame.width, size: size, style: style
+            )
+            captionLayoutPrefix = Array(words.prefix(origin))
+        }
+        model.captionWindow = CaptionFonts.window(
+            committed: committed, tentative: tentative, width: panel.frame.width,
+            size: size, style: style, startingAtWord: captionLayoutPrefix?.count ?? 0
         )
     }
 
@@ -121,13 +159,19 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
             return
         }
 
-        if panel.frame.contains(NSEvent.mouseLocation) {
+        guard !model.captionFontMenuIsOpen, !model.captionOpacityIsEditing,
+              NSEvent.pressedMouseButtons == 0 else { return }
+        if containsInteractionPoint(NSEvent.mouseLocation) {
             hoverDismissTask?.cancel()
             hoverDismissTask = nil
+            if model.captionToolbarOpacity != 1 { model.captionToolbarOpacity = 1 }
+            panel.ignoresMouseEvents = false
             if model.captionControlsMode == .hidden {
                 revealHoverControls()
             }
         } else if model.captionControlsMode == .hover {
+            // Transparent space beside the narrow toolbar must not catch clicks.
+            panel.ignoresMouseEvents = true
             scheduleHoverDismiss()
         }
     }
@@ -136,6 +180,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         guard model.captionControlsMode == .hidden else { return }
         let captionFrame = currentCaptionFrame
         let placement = toolbarPlacement(for: captionFrame)
+        model.captionToolbarOpacity = 1
         model.captionControlsMode = .hover
         model.captionToolbarPlacement = placement
         applyPanelFrame(anchoredTo: captionFrame, controlsVisible: true, placement: placement)
@@ -149,10 +194,21 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         hoverDismissTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(450))
             guard !Task.isCancelled, let self else { return }
-            self.hoverDismissTask = nil
             guard self.model.captionControlsMode == .hover,
-                  !self.panel.frame.contains(NSEvent.mouseLocation)
-            else { return }
+                  !self.model.captionFontMenuIsOpen,
+                  !self.model.captionOpacityIsEditing,
+                  NSEvent.pressedMouseButtons == 0,
+                  !self.containsInteractionPoint(NSEvent.mouseLocation)
+            else {
+                self.hoverDismissTask = nil
+                return
+            }
+            if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+                withAnimation(.easeOut(duration: 0.12)) { self.model.captionToolbarOpacity = 0 }
+                try? await Task.sleep(for: .milliseconds(120))
+                guard !Task.isCancelled else { return }
+            }
+            self.hoverDismissTask = nil
             self.collapseHoverControls()
         }
     }
@@ -170,12 +226,12 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     func beginPlacement() {
         stopHoverMonitoring()
         captionBeforePlacement = model.captionWindow
-        model.captionWindow = CaptionWindow(lines: [
-            CaptionLine(id: 0, committed: "Move and size captions.", tentative: ""),
-        ])
         let captionFrame = currentCaptionFrame
         let placement = toolbarPlacement(for: captionFrame)
+        model.captionToolbarSection = .none
+        model.captionToolbarOpacity = 1
         model.captionControlsMode = .placement
+        reflowLatestCaption(size: model.captionTextSize, style: model.captionFontStyle, resetAnchor: true)
         model.captionToolbarPlacement = placement
         applyPanelFrame(anchoredTo: captionFrame, controlsVisible: true, placement: placement)
         panel.ignoresMouseEvents = false
@@ -187,6 +243,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         model.captionWindow = captionBeforePlacement ?? .empty
         captionBeforePlacement = nil
         hideControlsPreservingCaptionAnchor()
+        reflowLatestCaption(size: model.captionTextSize, style: model.captionFontStyle, resetAnchor: true)
         saveLayout()
         panel.ignoresMouseEvents = true
         panel.isMovableByWindowBackground = false
@@ -206,13 +263,13 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         defaults.removeObject(forKey: Keys.screenIdentifier)
         guard let screen = activeScreen() else { return }
         model.captionScale = .medium
-        let width = resolvedWidth(for: .medium, on: screen)
+        let width = resolvedWidth(on: screen)
         let visibleFrame = screen.visibleFrame
         let captionFrame = NSRect(
             x: visibleFrame.midX - width / 2,
             y: visibleFrame.minY + 64,
             width: width,
-            height: model.captionTextSize.panelHeight
+            height: CaptionFonts.panelHeight(style: model.captionFontStyle)
         )
         let placement = model.captionControlsMode.isVisible
             ? toolbarPlacement(for: captionFrame, on: screen)
@@ -225,13 +282,13 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         )
     }
 
-    private func resizePanel(for scale: CaptionScale) {
+    private func resizePanel(for scale: CaptionScale, style: CaptionFontStyle) {
         guard let screen = panel.screen ?? activeScreen() else { return }
-        let width = resolvedWidth(for: scale.panelWidth, on: screen)
+        let width = resolvedWidth(on: screen)
         var captionFrame = currentCaptionFrame
         let centerX = captionFrame.midX
         captionFrame.size.width = width
-        captionFrame.size.height = scale.textSize.panelHeight
+        captionFrame.size.height = CaptionFonts.panelHeight(style: style)
         captionFrame.origin.x = centerX - width / 2
         captionFrame.origin.x = min(
             max(captionFrame.origin.x, screen.visibleFrame.minX),
@@ -247,11 +304,14 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
             placement: placement
         )
         saveLayout()
+        reflowLatestCaption(size: scale.textSize, style: style, resetAnchor: true)
     }
 
     func clearAndHide() {
         stopHoverMonitoring()
         captionBeforePlacement = nil
+        latestSnapshot = nil
+        captionLayoutPrefix = nil
         model.captionWindow = .empty
         hideControlsPreservingCaptionAnchor()
         panel.ignoresMouseEvents = true
@@ -262,6 +322,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     private func configurePanel() {
         panel.title = "Said Captions"
         panel.isFloatingPanel = true
+        panel.becomesKeyOnlyIfNeeded = true
         panel.level = .floating
         panel.backgroundColor = .clear
         panel.isOpaque = false
@@ -277,9 +338,68 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     private func installContent() {
         let view = CaptionView(
             model: model,
-            onDone: { [weak self] in self?.onPlacementFinished?() }
+            onDone: { [weak self] in self?.finishControls() }
         )
         panel.contentView = NSHostingView(rootView: view)
+    }
+
+    private func containsInteractionPoint(_ point: NSPoint) -> Bool {
+        let caption = currentCaptionFrame
+        if caption.contains(point) { return true }
+        guard model.captionControlsMode.isVisible else { return false }
+        let layout = CaptionToolbarLayout(
+            captionWidth: caption.width, section: model.captionToolbarSection
+        )
+        // Include the gap, so moving from captions to controls does not dismiss them.
+        let y = model.captionToolbarPlacement == .above
+            ? caption.maxY : caption.minY - CaptionPanelLayout.editingToolbarExtraHeight
+        return NSRect(x: caption.minX + layout.offsetX, y: y,
+                      width: layout.width, height: CaptionPanelLayout.editingToolbarExtraHeight)
+            .contains(point)
+    }
+
+    private func installDismissalMonitoring() {
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) {
+            [weak self] _ in
+            MainActor.assumeIsolated { self?.handleOutsideClick(at: NSEvent.mouseLocation) }
+        }
+        localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .keyDown]) {
+            [weak self] event in
+            let consumed = MainActor.assumeIsolated {
+                guard let self else { return false }
+                if event.type == .keyDown {
+                    guard event.keyCode == 53, self.model.captionControlsMode.isVisible,
+                          !self.model.captionFontMenuIsOpen else { return false }
+                    if self.model.captionToolbarSection != .none {
+                        self.model.captionToolbarSection = .none
+                    } else {
+                        self.finishControls()
+                    }
+                    return true
+                }
+                let point = event.window?.convertPoint(toScreen: event.locationInWindow) ?? NSEvent.mouseLocation
+                self.handleOutsideClick(at: point)
+                return false
+            }
+            return consumed ? nil : event
+        }
+    }
+
+    private func handleOutsideClick(at point: NSPoint) {
+        guard model.captionControlsMode.isVisible, !model.captionFontMenuIsOpen else { return }
+        if currentCaptionFrame.contains(point) {
+            model.captionToolbarSection = .none
+        } else if !containsInteractionPoint(point) {
+            finishControls()
+        }
+    }
+
+    private func finishControls() {
+        if model.captionControlsMode == .placement {
+            onPlacementFinished?()
+        } else {
+            collapseHoverControls()
+        }
     }
 
     private func activeScreen() -> NSScreen? {
@@ -299,8 +419,10 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
 
     private func restoreLayout() {
         guard let screen = savedScreen() ?? activeScreen() else { return }
-        let width = resolvedWidth(for: model.captionPanelWidth, on: screen)
-        panel.setContentSize(Self.panelSize(for: model.captionTextSize, width: width))
+        let width = resolvedWidth(on: screen)
+        panel.setContentSize(Self.panelSize(
+            style: model.captionFontStyle, width: width
+        ))
 
         guard defaults.object(forKey: Keys.positionX) != nil,
               defaults.object(forKey: Keys.positionY) != nil
@@ -321,12 +443,15 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
 
     private func observeScale() {
         scaleCancellable = model.$captionScale
+            .combineLatest(model.$captionFontStyle)
             .dropFirst()
-            .sink { [weak self] scale in self?.resizePanel(for: scale) }
+            .sink { [weak self] scale, style in self?.resizePanel(for: scale, style: style) }
     }
 
-    private static func panelSize(for textSize: CaptionTextSize, width: Double) -> NSSize {
-        NSSize(width: width, height: textSize.panelHeight)
+    private static func panelSize(
+        style: CaptionFontStyle, width: Double
+    ) -> NSSize {
+        NSSize(width: width, height: CaptionFonts.panelHeight(style: style))
     }
 
     private func saveLayout() {
@@ -347,9 +472,9 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         }
     }
 
-    private func resolvedWidth(for choice: CaptionPanelWidth, on screen: NSScreen) -> Double {
+    private func resolvedWidth(on screen: NSScreen) -> Double {
         CaptionPanelLayout.clampedWidth(
-            choice.preferredWidth,
+            CaptionPanelLayout.fixedCaptionWidth,
             visibleScreenWidth: screen.visibleFrame.width
         )
     }
@@ -357,6 +482,16 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     func windowDidMove(_ notification: Notification) {
         guard !isApplyingAnchoredFrame else { return }
         updateToolbarPlacement()
+        updatePreviewGeometry()
+    }
+
+    private func updatePreviewGeometry() {
+        // Preview-only AX metadata lets UI tests use real screen coordinates for drags.
+        guard ProcessInfo.processInfo.arguments.contains(where: { $0.hasPrefix("--preview-") }),
+              let primaryScreen = NSScreen.screens.first else { return }
+        let frame = panel.frame
+        let top = primaryScreen.frame.maxY - frame.maxY
+        panel.setAccessibilityHelp("Preview screen frame: x \(Int(frame.minX)), y \(Int(top)), width \(Int(frame.width)), height \(Int(frame.height))")
     }
 
     private func updateToolbarPlacement() {
@@ -390,6 +525,8 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
 
     private func hideControlsPreservingCaptionAnchor() {
         let captionFrame = currentCaptionFrame
+        model.captionToolbarSection = .none
+        model.captionToolbarOpacity = 1
         model.captionControlsMode = .hidden
         applyPanelFrame(
             anchoredTo: captionFrame,
@@ -420,6 +557,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         )
         isApplyingAnchoredFrame = true
         panel.setFrame(frame, display: true)
+        updatePreviewGeometry()
         isApplyingAnchoredFrame = false
     }
 
@@ -496,4 +634,10 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         static let legacyWidth = "captionWidth"
         static let screenIdentifier = "captionScreenIdentifier"
     }
+}
+
+/// Controls can take keyboard focus when clicked; merely hovering never activates the app.
+private final class CaptionInteractionPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
 }

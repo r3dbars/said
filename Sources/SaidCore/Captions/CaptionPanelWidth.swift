@@ -1,3 +1,4 @@
+/// Historical width choices, retained to interpret saved pre-toolbar settings.
 public enum CaptionPanelWidth: String, CaseIterable, Sendable {
     case extraSmall
     case small

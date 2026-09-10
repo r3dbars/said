@@ -59,6 +59,13 @@ fi
 [[ -f "$app/Contents/Resources/Licenses/Privacy.md" ]] || { print -u2 "missing privacy document"; exit 1; }
 [[ -f "$app/Contents/Resources/Licenses/NVIDIA-Open-Model-License-2025-10-24.pdf" ]] || { print -u2 "missing NVIDIA model license"; exit 1; }
 [[ -f "$app/Contents/Resources/Said.icns" ]] || { print -u2 "missing Said app icon"; exit 1; }
+[[ -f "$app/Contents/Resources/Licenses/OpenDyslexic-OFL.txt" ]] || { print -u2 "missing OpenDyslexic license"; exit 1; }
+font_file="$app/Contents/Resources/Fonts/OpenDyslexic-Regular.otf"
+[[ -f "$font_file" ]] || { print -u2 "missing OpenDyslexic font"; exit 1; }
+[[ $(shasum -a 256 "$font_file" | awk '{print $1}') == 32f5840fb2bf844bdabafe372591ddfb9286e98117f5b21950aaf54ea856919a ]] || {
+  print -u2 "OpenDyslexic font does not match the pinned source"
+  exit 1
+}
 [[ $(plutil -extract CFBundleIconFile raw "$app/Contents/Info.plist") == Said.icns ]] || { print -u2 "invalid Said app icon declaration"; exit 1; }
 bundled_model=$(find "$app" -type f -iname '*.gguf' -print -quit)
 [[ -z "$bundled_model" ]] || { print -u2 "model must not be bundled: $bundled_model"; exit 1; }

@@ -9,6 +9,10 @@ final class AppModel: ObservableObject {
     @Published var captionWindow = CaptionWindow.empty
     @Published var captionControlsMode = CaptionControlsMode.hidden
     @Published var captionToolbarPlacement = CaptionToolbarPlacement.above
+    @Published var captionToolbarSection = CaptionToolbarSection.none
+    @Published var captionToolbarOpacity = 1.0
+    var captionFontMenuIsOpen = false
+    var captionOpacityIsEditing = false
     @Published var captureState: CaptureState = .idle
     @Published var modelState: ModelState = .checking
     @Published private(set) var captionsEnabled: Bool {
@@ -26,8 +30,13 @@ final class AppModel: ObservableObject {
     @Published var captionTextColor: CaptionTextColor {
         didSet { defaults.set(captionTextColor.rawValue, forKey: Keys.captionTextColor) }
     }
+    @Published private(set) var captionBackgroundOpacity: Double
+
+    func setCaptionBackgroundOpacity(_ value: Double) {
+        captionBackgroundOpacity = CaptionBackgroundOpacity.clamped(value)
+        defaults.set(captionBackgroundOpacity, forKey: Keys.captionBackgroundOpacity)
+    }
     var captionTextSize: CaptionTextSize { captionScale.textSize }
-    var captionPanelWidth: CaptionPanelWidth { captionScale.panelWidth }
 
     var onResetCaptionLayout: (() -> Void)?
     var onReinstallModel: (() -> Void)?
@@ -53,6 +62,10 @@ final class AppModel: ObservableObject {
         captionTextColor = CaptionTextColor(
             rawValue: defaults.string(forKey: Keys.captionTextColor) ?? ""
         ) ?? .white
+        captionBackgroundOpacity = CaptionBackgroundOpacity.clamped(
+            defaults.object(forKey: Keys.captionBackgroundOpacity) as? Double
+                ?? CaptionBackgroundOpacity.defaultValue
+        )
         let storedPanelWidth: CaptionPanelWidth
         if let stored = defaults.string(forKey: Keys.captionPanelWidth),
            let width = CaptionPanelWidth(rawValue: stored) {
@@ -130,6 +143,7 @@ final class AppModel: ObservableObject {
         static let captionTextSize = "captionTextSize"
         static let captionFontStyle = "captionFontStyle"
         static let captionTextColor = "captionTextColor"
+        static let captionBackgroundOpacity = "captionBackgroundOpacity"
         static let captionPanelWidth = "captionPanelWidth"
         static let legacyCaptionWidth = "captionWidth"
     }

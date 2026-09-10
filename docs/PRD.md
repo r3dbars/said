@@ -131,27 +131,30 @@ Default placement is horizontally centered roughly 64 points above the active
 display's visible bottom. Persist normalized display-relative placement, the
 chosen display when it remains connected, and the user's caption scale.
 
-The panel has five paired caption-scale presets. XS through XL use approximately
-14/360, 22/520, 34/760, 44/1000, and 56/1280 point text/width combinations,
-with width clamped to no more than about 90% of the active display. The pairings
-keep roughly six or seven words on each line instead of allowing type and window
-proportions to drift independently. Use 24-point horizontal and 17–20-point
-vertical padding, and about a 20–22-point radius. Use a dark neutral rounded
-surface, near-white text, and a subtle highlight border without a broad shadow
-or rectangular material-compositing region. Use an opaque high-contrast fallback
-for Reduce Transparency or Increase Contrast.
+The caption box stays 520 points wide (clamped to the active display) when
+text size changes. Its height reserves room for the largest text option: 110 pt
+for system faces and a font-metric allowance for OpenDyslexic. Changing size does
+not shrink or enlarge the box. Use 24-point horizontal and 17-point vertical
+padding and a 28-point continuous corner radius. Use a dark neutral surface,
+near-white text, and a subtle highlight border without a broad shadow. Reduce
+Transparency and Increase Contrast use an opaque background.
 
-Typography starts at 34 pt medium/semibold with Small 26 pt and Large 44 pt.
-Committed text is full opacity. Tentative text uses the same type at roughly
-58–68% opacity. No italics, speaker labels, timestamps, icons, waveforms,
-colored hypotheses, springs, or per-character animation.
+Typography offers 10, 14, 18, 22, and 28 pt, with an 18 pt default. Measure the
+actual selected font when packing words into two stable rows: smaller type fits
+more words within the same box. Reflow the current in-memory caption immediately
+when its size or face changes, including while playback is silent. Committed
+text is full opacity and tentative text uses the same face at 64% opacity.
+There are no speaker labels, timestamps, waveforms, or per-character animations.
 
-The hover/placement caption-control bar offers three intentionally small appearance
-sets: one XS–XL Caption Size control that changes type and panel geometry together,
-Rounded/Sans/Serif/Mono/Block system fonts, and White/Warm Yellow/Cyan text. Size and font
-changes are one-click cycles; color swatches are direct one-click choices.
-Tentative text uses the selected color at reduced opacity rather than a different
-semantic hue. All choices persist as ordinary app settings.
+The hover/placement caption-control bar has four compact controls: a single A,
+the selected font name with a chevron, the selected text-color dot, and a
+half-filled opacity circle. There are no permanent category labels or point-size
+values. The font menu shows Rounded, Sans, Serif, Mono, Block, and bundled
+OpenDyslexic (shown as **Dyslexic**) in their actual typefaces. Choosing a color
+opens White, Warm Yellow, Cyan, Mint, and Lavender, then folds back to the chosen
+dot. The opacity slider changes only the caption background, from 0–100%; text
+retains its committed/tentative contrast. Accessibility contrast/transparency
+preferences use an opaque background. All appearance choices persist locally.
 
 While the Said switch is enabled, keep the panel visible and preserve the latest
 caption between utterances. Before the first caption, show one quiet secondary
@@ -169,16 +172,24 @@ continuous pixel scrolling, or a history drawer.
 
 ### Move, settings, privacy
 
-Hovering visible captions makes the whole panel draggable and adds a compact
-dark control bar outside—not inside—the caption surface. Its controls form one
-left-aligned cluster. Clicking the visible XS, S, M, L, or XL Caption Size value
-cycles the five paired text/window presets. The control also shows the active
-point size so its effect remains legible. Font and color remain direct compact controls.
-The bar collapses shortly after
-the pointer leaves and captions return to click-through behavior. The menu-bar
-Customize Captions mode remains available during silence, shows a sample, and adds
-an explicit Done control. Scale changes snap immediately, remain centered when
-space allows, persist across launches, and clamp to the product/display bounds.
+Hovering visible captions makes the caption card draggable and reveals a compact
+bar centered outside the caption surface. The bar stays 260 × 44 pt in every
+mode, independent of caption size. Size, color, and opacity each replace the
+entire contents of the same bar; the other controls temporarily disappear. The A
+opens five progressively larger A choices for text size.
+The selected color opens five evenly spaced swatches. Opacity shows its icon,
+slider, and percentage; clicking the icon again restores the main controls.
+Fonts keep the native dropdown menu. Only one control is active at a time;
+selection, Escape, or a click on the captions returns to the compact controls.
+Leaving the caption and controls hides the bar after a brief grace period and
+fade, restoring click-through behavior. Native font-menu tracking and active
+slider adjustments keep the controls available. Reduce Motion suppresses animation.
+
+Both surfaces use continuous rounded corners: 28 pt on the caption card and
+18 pt on the toolbar. Customize Captions remains available from the menu during
+silence and shows a sample; clicking outside or pressing Escape finishes
+placement without adding another permanent button. Text size changes apply immediately and persist across launches; caption position
+and box dimensions stay fixed.
 When the panel moves into
 the upper half of its display, place the toolbar below the caption card; place
 it above the card in the lower half. Settings contains caption
@@ -409,6 +420,17 @@ long-run memory cannot be bounded.
 | 2026-08-23 | Use a native Said switch at the top of the menu | A bold product header plus a switch communicates the persistent on/off state more immediately than a checked command item. A restrained status indicator remains directly below it so control and operational truth stay distinct. |
 | 2026-08-23 | Keep the menu header compact and tint only the On state | A 38-point header, 15-point semibold title, and small switch match normal Mac menu density. Teal makes On unmistakable while Off remains system-neutral; the tint is local to Said and does not alter the user's global accent color. |
 | 2026-08-23 | Optically center the caption reading block | The caption surface is the product's primary reading experience. Centering the complete one- or two-line block gives it balanced top and bottom breathing room without changing the stable row-by-row text flow or left alignment. |
+
+## Owner update — September 10, 2026
+
+Add OpenDyslexic as an optional caption font, bundled for offline use and
+persisted like the existing styles. The owner subsequently approved the minimal
+fixed-size toolbar described above, replacing the prior size/font cycle controls.
+The September 10 mockups established softer corners and the single-dot color
+picker. Owner feedback after using the implementation supersedes outward
+expansion: keep a fixed centered bar, let each control take over its contents,
+and reduce the text-size range. Subsequent feedback keeps the caption box fixed
+while smaller text reveals more words through measured font fitting.
 
 ## Definition of done
 

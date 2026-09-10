@@ -8,6 +8,7 @@ revision. The app bundle does include the native `transcribe.cpp` runtime.
 | --- | --- | --- |
 | `transcribe.cpp` and Swift binding | `handy-computer/transcribe.cpp` commit `ea077b87590bcfb090d7c38c03ab36cd1c7005d3` | MIT |
 | ggml | vendored by the pinned `transcribe.cpp` revision | MIT |
+| OpenDyslexic Regular | [`antijingoist/opendyslexic`](https://github.com/antijingoist/opendyslexic/tree/1824da5c0e41dc3e13ffc7f3a636dcaf695d61b7) commit `1824da5c0e41dc3e13ffc7f3a636dcaf695d61b7`, `compiled/OpenDyslexic-Regular.otf` | SIL Open Font License 1.1 |
 | miniz | vendored by the pinned `transcribe.cpp` revision | MIT |
 | Parakeet Unified EN 0.6B | `nvidia/parakeet-unified-en-0.6b`, converted by `handy-computer/parakeet-unified-en-0.6b-gguf` revision `7e948f21b7bdbac698d3318db9d350f1096f3b6c` | NVIDIA Open Model License |
 
@@ -15,3 +16,8 @@ The packaged application includes verbatim runtime and dependency license
 files from the pinned source tree plus NVIDIA's official October 24, 2025 Open
 Model License PDF. Model licensing and provenance remain a human-reviewed
 public-release gate; see `docs/model-provenance.md`.
+
+OpenDyslexic Regular is bundled unchanged and registered only within Said's
+process. Its copyright and full license are included as
+`Licenses/OpenDyslexic-OFL.txt`. Font SHA-256:
+`32f5840fb2bf844bdabafe372591ddfb9286e98117f5b21950aaf54ea856919a`.
