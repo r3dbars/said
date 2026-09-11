@@ -98,6 +98,11 @@ final class AppController {
             captionPanel.showHoverControlsPreview()
         } else if ProcessInfo.processInfo.arguments.contains("--preview-caption-controls") {
             captionPanel.beginPlacement()
+        } else if ProcessInfo.processInfo.arguments.contains("--preview-settings") {
+            captionPanel.beginPlacement()
+            settingsWindow.show()
+        } else if ProcessInfo.processInfo.arguments.contains("--preview-privacy") {
+            settingsWindow.showPrivacy()
         } else if ProcessInfo.processInfo.arguments.contains("--preview-menu") {
             return
         } else {

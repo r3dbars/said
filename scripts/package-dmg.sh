@@ -50,6 +50,17 @@ staging=$(mktemp -d /private/tmp/said-dmg.XXXXXX)
 cleanup() { rm -rf "$staging" }
 trap cleanup EXIT
 
+if [[ "$notarize" == true ]]; then
+  # Staple the app as well as the disk image so its ticket travels with it
+  # after the user copies Said into Applications.
+  notary_zip="$staging/Said-notary.zip"
+  /usr/bin/ditto -c -k --keepParent "$repo_root/dist/Said.app" "$notary_zip"
+  xcrun notarytool submit "$notary_zip" --keychain-profile "$notary_profile" --wait
+  xcrun stapler staple "$repo_root/dist/Said.app"
+  xcrun stapler validate "$repo_root/dist/Said.app"
+  rm "$notary_zip"
+fi
+
 /usr/bin/ditto "$repo_root/dist/Said.app" "$staging/Said.app"
 ln -s /Applications "$staging/Applications"
 rm -f "$dmg"

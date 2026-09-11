@@ -6,6 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appController: AppController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        CaptionFonts.registerBundledFonts()
         let isVisualPreview = ProcessInfo.processInfo.arguments.contains {
             $0.hasPrefix("--preview-")
         }

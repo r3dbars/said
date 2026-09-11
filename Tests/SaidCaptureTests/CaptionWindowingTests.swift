@@ -4,20 +4,20 @@ import XCTest
 final class CaptionWindowingTests: XCTestCase {
     func testCaptionPanelWidthClampsToProductAndDisplayBounds() {
         XCTAssertEqual(
-            CaptionPanelLayout.clampedWidth(300, visibleScreenWidth: 1_440),
-            360
+            CaptionPanelLayout.clampedWidth(200, visibleScreenWidth: 1_440),
+            300
         )
         XCTAssertEqual(
             CaptionPanelLayout.clampedWidth(1_400, visibleScreenWidth: 1_440),
-            1_280
+            640
         )
         XCTAssertEqual(
-            CaptionPanelLayout.clampedWidth(1_000, visibleScreenWidth: 1_000),
-            900
+            CaptionPanelLayout.clampedWidth(640, visibleScreenWidth: 600),
+            540
         )
     }
 
-    func testCaptionPanelWidthChoicesAreOrderedBoundedAndMigratable() {
+    func testLegacyCaptionPanelWidthsRemainMigratable() {
         XCTAssertEqual(
             CaptionPanelWidth.allCases.map(\.title),
             ["XS", "S", "M", "L", "XL"]
@@ -33,11 +33,11 @@ final class CaptionWindowingTests: XCTestCase {
         XCTAssertEqual(CaptionPanelWidth.nearest(to: 1_250), .extraLarge)
     }
 
-    func testCaptionScalePairsTextAndWindowIntoFiveBalancedPresets() {
+    func testCaptionScaleRetainsFiveTextChoicesAndLegacyMigrationPairs() {
         XCTAssertEqual(CaptionScale.allCases.map(\.title), ["XS", "S", "M", "L", "XL"])
         XCTAssertEqual(
             CaptionScale.allCases.map { $0.textSize.pointSize },
-            [14, 22, 34, 44, 56]
+            [10, 14, 18, 22, 28]
         )
         XCTAssertEqual(
             CaptionScale.allCases.map { $0.panelWidth.preferredWidth },
@@ -46,15 +46,7 @@ final class CaptionWindowingTests: XCTestCase {
         XCTAssertEqual(CaptionScale.extraSmall.next, .small)
         XCTAssertEqual(CaptionScale.medium.next, .large)
         XCTAssertEqual(CaptionScale.extraLarge.next, .extraSmall)
-        XCTAssertEqual(
-            CaptionScale.allCases.map {
-                CaptionPanelLayout.wordsPerLine(
-                    width: $0.panelWidth.preferredWidth,
-                    textSize: $0.textSize
-                )
-            },
-            [7, 7, 7, 6, 6]
-        )
+
     }
 
     func testCaptionScaleMigratesCommonIndependentSettings() {
@@ -72,34 +64,41 @@ final class CaptionWindowingTests: XCTestCase {
         )
     }
 
+    func testLegacyNumericWidthDoesNotAccidentallySelectLargestNewText() {
+        XCTAssertEqual(CaptionScale.nearest(textSize: .standard,
+                                           panelWidth: .nearest(to: 760)), .medium)
+        XCTAssertEqual(CaptionScale.nearest(textSize: .compact,
+                                           panelWidth: .nearest(to: 520)), .small)
+    }
+
     func testCaptionRowCapacityTracksWidthAndTextSize() {
         XCTAssertEqual(
-            CaptionPanelLayout.wordsPerLine(width: 760, textSize: .standard),
+            CaptionPanelLayout.wordsPerLine(width: 440, textSize: .standard),
             7
         )
         XCTAssertEqual(
-            CaptionPanelLayout.wordsPerLine(width: 440, textSize: .standard),
+            CaptionPanelLayout.wordsPerLine(width: 300, textSize: .standard),
             4
         )
         XCTAssertEqual(
-            CaptionPanelLayout.wordsPerLine(width: 980, textSize: .small),
-            11
+            CaptionPanelLayout.wordsPerLine(width: 640, textSize: .compact),
+            13
         )
         XCTAssertEqual(
-            CaptionPanelLayout.wordsPerLine(width: 440, textSize: .large),
+            CaptionPanelLayout.wordsPerLine(width: 180, textSize: .large),
             2
         )
     }
 
     func testCaptionPanelHeightsAccommodateEachTextSize() {
-        XCTAssertEqual(CaptionTextSize.tiny.panelHeight, 72)
-        XCTAssertEqual(CaptionTextSize.extraSmall.panelHeight, 82)
-        XCTAssertEqual(CaptionTextSize.compact.panelHeight, 96)
-        XCTAssertEqual(CaptionTextSize.small.panelHeight, 110)
-        XCTAssertEqual(CaptionTextSize.standard.panelHeight, 126)
-        XCTAssertEqual(CaptionTextSize.large.panelHeight, 160)
-        XCTAssertEqual(CaptionTextSize.extraLarge.panelHeight, 190)
-        XCTAssertEqual(CaptionTextSize.allCases.map(\.pointSize), [14, 18, 22, 26, 34, 44, 56])
+        XCTAssertEqual(CaptionTextSize.tiny.panelHeight, 62)
+        XCTAssertEqual(CaptionTextSize.extraSmall.panelHeight, 66)
+        XCTAssertEqual(CaptionTextSize.compact.panelHeight, 72)
+        XCTAssertEqual(CaptionTextSize.small.panelHeight, 78)
+        XCTAssertEqual(CaptionTextSize.standard.panelHeight, 82)
+        XCTAssertEqual(CaptionTextSize.large.panelHeight, 96)
+        XCTAssertEqual(CaptionTextSize.extraLarge.panelHeight, 110)
+        XCTAssertEqual(CaptionTextSize.allCases.map(\.pointSize), [10, 12, 14, 16, 18, 22, 28])
     }
 
     func testCaptionTextSizeStepsAreBounded() {
@@ -120,27 +119,25 @@ final class CaptionWindowingTests: XCTestCase {
     }
 
     func testCaptionAppearanceChoicesStaySmallAndExplicit() {
-        XCTAssertEqual(CaptionFontStyle.allCases, [.rounded, .sans, .serif, .mono, .block])
-        XCTAssertEqual(CaptionTextColor.allCases, [.white, .yellow, .cyan])
+        XCTAssertEqual(CaptionFontStyle.allCases, [.rounded, .sans, .serif, .mono, .block, .dyslexic])
+        XCTAssertEqual(CaptionTextColor.allCases, [.white, .yellow, .cyan, .mint, .lavender])
         XCTAssertEqual(CaptionFontStyle.rounded.next, .sans)
         XCTAssertEqual(CaptionFontStyle.sans.next, .serif)
         XCTAssertEqual(CaptionFontStyle.serif.next, .mono)
         XCTAssertEqual(CaptionFontStyle.mono.next, .block)
-        XCTAssertEqual(CaptionFontStyle.block.next, .rounded)
+        XCTAssertEqual(CaptionFontStyle.block.next, .dyslexic)
+        XCTAssertEqual(CaptionFontStyle.dyslexic.next, .rounded)
     }
 
     func testCaptionControlModesPreserveHoverAndMenuRoles() {
         XCTAssertFalse(CaptionControlsMode.hidden.isVisible)
         XCTAssertTrue(CaptionControlsMode.hidden.acceptsLiveCaptions)
-        XCTAssertFalse(CaptionControlsMode.hidden.showsDoneButton)
 
         XCTAssertTrue(CaptionControlsMode.hover.isVisible)
         XCTAssertTrue(CaptionControlsMode.hover.acceptsLiveCaptions)
-        XCTAssertFalse(CaptionControlsMode.hover.showsDoneButton)
 
         XCTAssertTrue(CaptionControlsMode.placement.isVisible)
         XCTAssertFalse(CaptionControlsMode.placement.acceptsLiveCaptions)
-        XCTAssertTrue(CaptionControlsMode.placement.showsDoneButton)
     }
 
     func testToolbarMovesBelowCaptionsInUpperHalfOfDisplay() {

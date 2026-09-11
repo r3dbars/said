@@ -11,37 +11,27 @@ public enum CaptionTextSize: String, CaseIterable, Codable, Sendable {
 
     public var pointSize: Double {
         switch self {
-        case .tiny: 14
-        case .extraSmall: 18
-        case .compact: 22
-        case .small: 26
-        case .standard: 34
-        case .large: 44
-        case .extraLarge: 56
+        case .tiny: 10
+        case .extraSmall: 12
+        case .compact: 14
+        case .small: 16
+        case .standard: 18
+        case .large: 22
+        case .extraLarge: 28
         }
     }
 
-    public var title: String {
-        switch self {
-        case .tiny: "14 pt"
-        case .extraSmall: "18 pt"
-        case .compact: "22 pt"
-        case .small: "26 pt"
-        case .standard: "34 pt"
-        case .large: "44 pt"
-        case .extraLarge: "56 pt"
-        }
-    }
+    public var title: String { "\(Int(pointSize)) pt" }
 
     public var panelHeight: Double {
         switch self {
-        case .tiny: 72
-        case .extraSmall: 82
-        case .compact: 96
-        case .small: 110
-        case .standard: 126
-        case .large: 160
-        case .extraLarge: 190
+        case .tiny: 62
+        case .extraSmall: 66
+        case .compact: 72
+        case .small: 78
+        case .standard: 82
+        case .large: 96
+        case .extraLarge: 110
         }
     }
 

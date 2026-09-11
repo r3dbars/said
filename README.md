@@ -12,13 +12,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/r3dbars/said/releases/download/v0.1.0-alpha/Said-0.1.0-alpha.dmg"><strong>Download Said 0.1.0 Alpha</strong></a>
+  <a href="https://github.com/r3dbars/said/releases/download/v0.1.1-alpha/Said-0.1.1-alpha.dmg"><strong>Download Said 0.1.1 Alpha</strong></a>
   ·
   <a href="#build-from-source"><strong>Build from source</strong></a>
 </p>
 
 <p align="center">
-  <sub>Apple silicon · macOS 26+ · English · 4.5 MB app + one-time 731 MB model download</sub>
+  <sub>Apple silicon · macOS 26+ · English · One-time 731 MB model download</sub>
 </p>
 
 <p align="center">
@@ -77,10 +77,13 @@ Captions are designed for reading in motion:
 - A fixed left edge gives your eyes a dependable place to return to.
 - Complete rows advance together instead of constantly reflowing old words.
 - Stable words stay stable; only the newest tentative suffix may soften and change.
-- The panel never takes keyboard focus and remains above full-screen apps.
-- Hover reveals one compact bar for moving captions, changing the unified
-  `XS`–`XL` scale, choosing Rounded/Sans/Serif/Mono/Block, and selecting white,
-  warm yellow, or cyan text.
+- Reading and hovering leave keyboard focus in your current app; clicking a
+  control lets you adjust it with the keyboard.
+- Hover reveals a centered bar that stays the same size. Choose a text size by
+  eye, select one of six fonts including OpenDyslexic, pick from five colors, or
+  adjust the background opacity. Each font name appears in its own typeface.
+- The caption box grows gently with 10–28 pt text and keeps proportional corners.
+  Smaller text fits more words. Appearance choices are saved locally.
 
 <p align="center">
   <img src="docs/assets/caption-optically-centered.jpeg" width="520" alt="Said caption surface with its compact hover customization bar">
@@ -118,20 +121,20 @@ Read the complete [privacy contract](docs/privacy.md),
 
 Said currently requires an Apple-silicon Mac running macOS 26 or later.
 
-1. [Download **Said-0.1.0-alpha.dmg**](https://github.com/r3dbars/said/releases/download/v0.1.0-alpha/Said-0.1.0-alpha.dmg).
+1. [Download **Said-0.1.1-alpha.dmg**](https://github.com/r3dbars/said/releases/download/v0.1.1-alpha/Said-0.1.1-alpha.dmg).
 2. Open the DMG and drag **Said** into **Applications**.
-3. Control-click Said, choose **Open**, then confirm.
+3. Open Said from Applications and confirm the normal macOS download prompt.
 4. Allow **System Audio Recording Only** when macOS asks.
 5. Let Said download and verify its English speech model once.
 6. Play something with spoken English and turn the Said switch on.
 
 > [!IMPORTANT]
-> This is a playable, ad-hoc-signed alpha. It is not yet a notarized public release.
-> The Control-click → Open step is required because no Developer ID certificate
-> is configured yet. Do not redistribute this alpha as a finished release.
+> This alpha is Developer ID signed and notarized by Apple. Physical M1 testing,
+> longer sessions, clean-machine installation, and final model-license review
+> remain open. See the [verification matrix](docs/reliability-matrix.md).
 
 The release page publishes the DMG checksum and build commit:
-[Said 0.1.0 Alpha](https://github.com/r3dbars/said/releases/tag/v0.1.0-alpha).
+[Said 0.1.1 Alpha](https://github.com/r3dbars/said/releases/tag/v0.1.1-alpha).
 
 ## Scope
 
@@ -201,8 +204,8 @@ Verified today:
 
 The [release checklist](docs/release-checklist.md) clearly separates what is
 proven from what still blocks a finished public release: physical M1/16 GB
-performance, long-session receipts, final model-license review, Developer ID
-signing, notarization, and a clean-machine install.
+performance, long-session receipts, final model-license review, and a
+clean-machine install. The 0.1.1 alpha adds Developer ID signing and notarization.
 
 <details>
 <summary><strong>Verification commands</strong></summary>

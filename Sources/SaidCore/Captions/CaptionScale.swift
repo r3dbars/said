@@ -35,6 +35,7 @@ public enum CaptionScale: String, CaseIterable, Codable, Sendable {
         }
     }
 
+    /// Legacy pairing retained only to migrate pre-toolbar preferences.
     public var panelWidth: CaptionPanelWidth {
         switch self {
         case .extraSmall: .extraSmall
