@@ -20,6 +20,8 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     private var latestSnapshot: ASRTextSnapshot?
     private var captionBeforePlacement: CaptionWindow?
     private var isApplyingAnchoredFrame = false
+    private var resizeTask: Task<Void, Never>?
+    private var resizeTargetFrame: NSRect?
 
     init(model: AppModel) {
         self.model = model
@@ -51,6 +53,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     }
 
     isolated deinit {
+        resizeTask?.cancel()
         if let outsideClickMonitor { NSEvent.removeMonitor(outsideClickMonitor) }
         if let localClickMonitor { NSEvent.removeMonitor(localClickMonitor) }
     }
@@ -123,15 +126,16 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
             tentative = snapshot.tentative
         } else { return }
         let text = committed + " " + tentative
+        let width = resizeTargetFrame?.width ?? panel.frame.width
         let words = text.split(whereSeparator: \Character.isWhitespace).map(String.init)
         if resetAnchor || captionLayoutPrefix == nil || !words.starts(with: captionLayoutPrefix ?? []) {
             let origin = CaptionFonts.filledRowOrigin(
-                text: text, width: panel.frame.width, size: size, style: style
+                text: text, width: width, size: size, style: style
             )
             captionLayoutPrefix = Array(words.prefix(origin))
         }
         model.captionWindow = CaptionFonts.window(
-            committed: committed, tentative: tentative, width: panel.frame.width,
+            committed: committed, tentative: tentative, width: width,
             size: size, style: style, startingAtWord: captionLayoutPrefix?.count ?? 0
         )
     }
@@ -299,16 +303,22 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
             max(captionFrame.origin.x, screen.visibleFrame.minX),
             screen.visibleFrame.maxX - width
         )
+        captionFrame.origin.y = min(
+            max(captionFrame.origin.y, screen.visibleFrame.minY),
+            screen.visibleFrame.maxY - captionFrame.height
+        )
         let placement = model.captionControlsMode.isVisible
             ? toolbarPlacement(for: captionFrame, on: screen)
             : model.captionToolbarPlacement
+        let keepsToolbarEdge = placement == model.captionToolbarPlacement
         model.captionToolbarPlacement = placement
         applyPanelFrame(
             anchoredTo: captionFrame,
             controlsVisible: model.captionControlsMode.isVisible,
-            placement: placement
+            placement: placement,
+            animated: keepsToolbarEdge
         )
-        saveLayout()
+        persistLayout(captionFrame: captionFrame, on: screen)
         reflowLatestCaption(size: scale.textSize, style: style, resetAnchor: true)
     }
 
@@ -462,7 +472,10 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     private func saveLayout() {
         guard let screen = panel.screen ?? activeScreen() else { return }
         constrainCaption(to: screen.visibleFrame)
-        let captionFrame = currentCaptionFrame
+        persistLayout(captionFrame: currentCaptionFrame, on: screen)
+    }
+
+    private func persistLayout(captionFrame: NSRect, on screen: NSScreen) {
         let visible = screen.visibleFrame
         let availableWidth = max(1, visible.width - captionFrame.width)
         let availableHeight = max(1, visible.height - captionFrame.height)
@@ -486,6 +499,20 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
 
     func windowDidMove(_ notification: Notification) {
         guard !isApplyingAnchoredFrame else { return }
+        // A real drag takes over immediately, even during an appearance change.
+        if let target = resizeTargetFrame {
+            resizeTask?.cancel()
+            resizeTask = nil
+            resizeTargetFrame = nil
+            let moved = panel.frame
+            setPanelFrame(NSRect(
+                x: moved.midX - target.width / 2,
+                y: model.captionToolbarPlacement == .above ? moved.maxY - target.height : moved.minY,
+                width: target.width,
+                height: target.height
+            ))
+            reflowLatestCaption(size: model.captionTextSize, style: model.captionFontStyle, resetAnchor: true)
+        }
         updateToolbarPlacement()
         updatePreviewGeometry()
     }
@@ -511,19 +538,22 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     }
 
     private var currentCaptionFrame: NSRect {
+        // Control dismissal or another size choice must use the completed layout,
+        // never save an intermediate animation frame as the user's caption size.
+        let frame = resizeTargetFrame ?? panel.frame
         let controlsVisible = model.captionControlsMode.isVisible
         let extraHeight = controlsVisible ? CaptionPanelLayout.editingToolbarExtraHeight : 0
-        let captionHeight = max(0, panel.frame.height - extraHeight)
+        let captionHeight = max(0, frame.height - extraHeight)
         let captionMinY = CaptionPanelGeometry.captionMinY(
-            panelMinY: panel.frame.minY,
+            panelMinY: frame.minY,
             controlsVisible: controlsVisible,
             placement: model.captionToolbarPlacement,
             toolbarExtraHeight: CaptionPanelLayout.editingToolbarExtraHeight
         )
         return NSRect(
-            x: panel.frame.minX,
+            x: frame.minX,
             y: captionMinY,
-            width: panel.frame.width,
+            width: frame.width,
             height: captionHeight
         )
     }
@@ -543,7 +573,8 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     private func applyPanelFrame(
         anchoredTo captionFrame: NSRect,
         controlsVisible: Bool,
-        placement: CaptionToolbarPlacement
+        placement: CaptionToolbarPlacement,
+        animated: Bool = false
     ) {
         let frame = NSRect(
             x: captionFrame.minX,
@@ -560,6 +591,41 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
                 toolbarExtraHeight: CaptionPanelLayout.editingToolbarExtraHeight
             )
         )
+        resizeTask?.cancel()
+        resizeTask = nil
+        resizeTargetFrame = nil
+        guard animated, panel.isVisible, frame != panel.frame,
+              !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+            setPanelFrame(frame)
+            return
+        }
+        let startFrame = panel.frame
+        let startedAt = ProcessInfo.processInfo.systemUptime
+        resizeTargetFrame = frame
+        // Applying each frame through the same anchored path prevents window-move
+        // callbacks from flipping the toolbar or persisting a halfway size.
+        resizeTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self else { return }
+                let progress = min(1, (ProcessInfo.processInfo.systemUptime - startedAt) / 0.18)
+                let eased = progress * progress * (3 - 2 * progress)
+                self.setPanelFrame(NSRect(
+                    x: startFrame.minX + (frame.minX - startFrame.minX) * eased,
+                    y: startFrame.minY + (frame.minY - startFrame.minY) * eased,
+                    width: startFrame.width + (frame.width - startFrame.width) * eased,
+                    height: startFrame.height + (frame.height - startFrame.height) * eased
+                ))
+                if progress == 1 {
+                    self.resizeTargetFrame = nil
+                    self.resizeTask = nil
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(16))
+            }
+        }
+    }
+
+    private func setPanelFrame(_ frame: NSRect) {
         isApplyingAnchoredFrame = true
         panel.setFrame(frame, display: true)
         updatePreviewGeometry()

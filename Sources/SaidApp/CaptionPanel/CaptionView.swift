@@ -86,13 +86,17 @@ struct CaptionView: View {
         }
     }
 
-    private var captionShape: RoundedRectangle {
-        let height = CaptionFonts.panelHeight(style: model.captionFontStyle, size: model.captionTextSize)
-        return RoundedRectangle(
-            cornerRadius: height * CaptionToolbarLayout.cornerRadius / CaptionToolbarLayout.height,
-            style: .continuous
-        )
-    }
+    private var captionShape: ProportionalCaptionShape { ProportionalCaptionShape() }
 
     private var captionColor: Color { model.captionTextColor.color }
+}
+
+/// Use the rendered height so the curves retain their proportions during resizing.
+private struct ProportionalCaptionShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        RoundedRectangle(
+            cornerRadius: rect.height * CaptionToolbarLayout.cornerRadius / CaptionToolbarLayout.height,
+            style: .continuous
+        ).path(in: rect)
+    }
 }

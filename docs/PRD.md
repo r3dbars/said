@@ -137,7 +137,10 @@ text sizes, clamped to the active display. Height fits two rows of the selected
 font's actual metrics, with 12–16.5 pt vertical and 18–24 pt horizontal padding.
 Smaller type still fits more words because the box grows more slowly than the
 letters. Keep its horizontal center and the edge nearest the toolbar stable
-while resizing. Use continuous corners proportional to the caption height,
+while resizing. Size and face changes ease to their new dimensions over 180 ms;
+Reduce Motion applies them immediately. Rapid choices or dismissal must complete
+at the selected dimensions, never an intermediate animation frame.
+Use continuous corners proportional to the rendered caption height,
 matching the toolbar's 18:44 radius-to-height ratio, and a dark neutral surface,
 near-white text, and a subtle highlight border without a broad shadow. Reduce
 Transparency and Increase Contrast use an opaque background.

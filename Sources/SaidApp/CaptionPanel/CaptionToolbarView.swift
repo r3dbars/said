@@ -5,27 +5,31 @@ struct CaptionToolbarView: View {
     @ObservedObject var model: AppModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorSchemeContrast) private var contrast
+    @State private var fontIsHovered = false
 
     var body: some View {
         GeometryReader { geometry in
             let layout = CaptionToolbarLayout(
                 captionWidth: geometry.size.width, section: model.captionToolbarSection
             )
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
                 if layout.usesFocusedControls {
                     focusedControls
                 } else {
                     sizeButton
                     separator
                     CaptionFontMenu(model: model)
-                        .frame(width: 112, height: 32)
+                        .frame(width: 110, height: 32)
+                        .background(.white.opacity(fontIsHovered ? 0.08 : 0),
+                                    in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                        .onHover { fontIsHovered = $0 }
                     separator
                     colorButton
                     separator
                     opacityButton
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 9)
             .frame(width: layout.width, height: CaptionToolbarLayout.height)
             .background(Color(red: 0.10, green: 0.10, blue: 0.115),
                         in: RoundedRectangle(cornerRadius: CaptionToolbarLayout.cornerRadius, style: .continuous))
@@ -54,13 +58,14 @@ struct CaptionToolbarView: View {
     }
 
     private var separator: some View {
-        Rectangle().fill(.white.opacity(0.13)).frame(width: 1, height: 16)
+        Rectangle().fill(.white.opacity(0.08)).frame(width: 1, height: 15)
+            .padding(.horizontal, 1)
     }
 
     private var sizeButton: some View {
         Button { toggle(.size) } label: {
-            Text("A").font(.system(size: 20, weight: .medium))
-                .frame(width: 28, height: 32)
+            Text("A").font(.system(size: 22, weight: .medium))
+                .frame(width: 32, height: 32)
         }
         .buttonStyle(CaptionToolbarButtonStyle())
         .help("Caption size")
@@ -77,11 +82,11 @@ struct CaptionToolbarView: View {
                     model.captionScale = choice
                 } label: {
                     Text("A")
-                        .font(.system(size: Double(12 + index * 3), weight: .medium))
+                        .font(.system(size: Double(13 + index * 3), weight: .medium))
                         .frame(maxWidth: .infinity)
                         .frame(minWidth: 28, minHeight: 32)
                         .background(.white.opacity(choice == model.captionScale ? 0.16 : 0),
-                                    in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                                    in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 }
                 .buttonStyle(CaptionToolbarButtonStyle())
                 .help(choice.accessibilityTitle)
@@ -111,9 +116,9 @@ struct CaptionToolbarView: View {
                     model.captionToolbarSection = .none
                 } label: {
                     swatch(choice, selected: choice == model.captionTextColor)
+                        .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(CaptionToolbarButtonStyle())
-                .frame(maxWidth: .infinity)
                 .help(choice.title)
                 .accessibilityLabel("\(choice.title) caption text")
                 .accessibilityValue(choice == model.captionTextColor ? "Selected" : "")
@@ -126,7 +131,7 @@ struct CaptionToolbarView: View {
             .overlay {
                 if selected { Circle().stroke(.white, lineWidth: 1.5).padding(-3) }
             }
-            .frame(width: 28, height: 32)
+            .frame(width: 32, height: 32)
             .contentShape(Rectangle())
     }
 
@@ -134,7 +139,7 @@ struct CaptionToolbarView: View {
         Button { toggle(.opacity) } label: {
             Image(systemName: "circle.lefthalf.filled")
                 .font(.system(size: 17, weight: .regular))
-                .frame(width: 28, height: 32)
+                .frame(width: 32, height: 32)
         }
         .buttonStyle(CaptionToolbarButtonStyle())
         .help("Background opacity")
@@ -162,10 +167,20 @@ struct CaptionToolbarView: View {
 
 private struct CaptionToolbarButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundStyle(.white.opacity(configuration.isPressed ? 0.65 : 0.92))
-            .background(.white.opacity(configuration.isPressed ? 0.1 : 0),
-                        in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .contentShape(Rectangle())
+        HoverBody(configuration: configuration)
+    }
+
+    private struct HoverBody: View {
+        let configuration: ButtonStyle.Configuration
+        @State private var isHovered = false
+
+        var body: some View {
+            configuration.label
+                .foregroundStyle(.white.opacity(configuration.isPressed ? 0.65 : 0.92))
+                .background(.white.opacity(configuration.isPressed ? 0.12 : (isHovered ? 0.08 : 0)),
+                            in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                .contentShape(Rectangle())
+                .onHover { isHovered = $0 }
+        }
     }
 }
