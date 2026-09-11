@@ -416,6 +416,7 @@ long-run memory cannot be bounded.
 | Date | Decision | Reason |
 | --- | --- | --- |
 | 2026-08-22 | Proceed with a local alpha on the available M5 Max | The virtual M1 run proved correctness and memory safety but its three-core paravirtual environment is not representative of physical-M1 real-time performance. A physical M1/16 GB receipt remains a public-release gate. |
+| 2026-09-10 | Publish the approved caption update as 0.1.1 Alpha | The owner explicitly requested a PR, merge to main, and new release. Keep the existing prerelease scope and outstanding V1 gates visible; no model weights are bundled or redistributed. Sign and notarize the alpha with the now-available Developer ID identity. |
 | 2026-08-22 | Roll captions in stable whole-line steps | A moving suffix caused the upper line to rewrap under the reader's eyes. The lower row now grows in place and advances upward only when a new row begins. |
 | 2026-08-22 | Hover visible captions to adjust them; retain explicit menu placement | Hover removes unnecessary menu-bar friction while delayed collapse restores normal click-through behavior. The menu action remains the dependable path during silence and shows an explicit Done affordance. |
 | 2026-08-22 | Put a compact appearance bar above captions during layout editing | The owner selected a dense dark-toolbar reference and requested one-click size and color plus a few font choices without adding persistent normal-mode chrome. |

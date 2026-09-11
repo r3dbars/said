@@ -156,6 +156,7 @@ fi
 
 [[ "$details" == *"Authority=Developer ID Application:"* ]] || { print -u2 "missing Developer ID Application signature"; exit 1; }
 spctl -a -vv --type execute "$app"
+xcrun stapler validate "$app"
 if [[ "$artifact" == *.dmg ]]; then
   codesign --verify --verbose=2 "$artifact"
   xcrun stapler validate "$artifact"
@@ -164,5 +165,5 @@ print "release verification passed"
 if [[ "$artifact" == *.dmg ]]; then
   write_receipt developer-id true true true
 else
-  write_receipt developer-id true true false
+  write_receipt developer-id true true true
 fi

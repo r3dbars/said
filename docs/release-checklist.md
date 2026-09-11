@@ -67,7 +67,7 @@ It is deliberately named `local-alpha` and is not a public distribution build.
 
 ```bash
 ./scripts/package-dmg.sh --adhoc
-./scripts/verify-release.sh --allow-adhoc dist/Said-0.1.0-alpha-local-alpha.dmg
+./scripts/verify-release.sh --allow-adhoc dist/Said-0.1.1-alpha-local-alpha.dmg
 ```
 
 Successful verification writes a content-free JSON receipt under
@@ -95,21 +95,22 @@ macOS System Audio Recording Only consent surface.
 export SAID_SIGNING_IDENTITY='Developer ID Application: Example (TEAMID)'
 export SAID_NOTARY_PROFILE='said-notary'
 ./scripts/package-dmg.sh --notarize
-./scripts/verify-release.sh dist/Said-0.1.0-alpha.dmg
+./scripts/verify-release.sh dist/Said-0.1.1-alpha.dmg
 ```
 
 The build script signs `CTranscribe.framework` first, signs Said with Hardened
-Runtime and a secure timestamp, signs the DMG, submits it with `notarytool`, and
-staples the accepted ticket. The verifier checks bundle layout, arm64-only
+Runtime and a secure timestamp, notarizes and staples the app, then signs,
+notarizes, and staples the DMG. The app's ticket travels with it after copying
+to Applications. The verifier checks bundle layout, arm64-only
 architecture, privacy keys, licenses, nested signatures, Developer ID,
 Hardened Runtime, Gatekeeper acceptance, and the stapled ticket.
 
-## Current machine status
+## Current machine status — September 10, 2026
 
-`security find-identity -p codesigning -v` reports one Apple Development
-identity and no Developer ID Application identity. The development certificate
-itself validates, but a separately launched `codesign --verify` reports
-`CSSMERR_TP_NOT_TRUSTED` for artifacts it signs. Said therefore defaults to a
-valid ad-hoc local build on this Mac and does not automatically select that
-identity. The machine cannot honestly produce or validate the final Developer
-ID/notarized release.
+The earlier missing-certificate and trust-chain limits have been resolved on
+this Mac. Both Apple Development and Developer ID Application identities now
+validate, and the existing notarization keychain profile authenticates with
+Apple. The 0.1.1-alpha packaging path checks both the app and DMG tickets.
+Use the exact release receipt for the artifact's verification result; this
+does not close the physical M1, long-session, clean-machine, or model-license
+review gates. This version remains a prerelease and does not bundle model weights.

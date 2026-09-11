@@ -100,8 +100,8 @@ retained in a receipt.
 | Local-alpha app and DMG verification | **Proven — local only** | `verify-release.sh`; local DMG SHA-256 `2524381508409411159ed6a8a52cb7aa9ed1e9f8b5ac1505a875d5fbafb823c0` | Ad-hoc artifacts are intentionally not distributable |
 | Pinned runtime bootstrap is reproducible | **Proven — deterministic** | `bootstrap.sh` consumes `Dependencies/transcribe-cpp.lock.json`, verifies macOS/Xcode/Swift prerequisites, exact submodule commit, cached archive size/SHA-256, and extracted macOS runtime binary size/SHA-256; every GitHub Quality run executes it from a clean checkout | Continue to update the lock and both artifact receipts together for runtime changes |
 | GitHub quality gate | **Proven** | [main run 32592562006](https://github.com/r3dbars/said/actions/runs/32592562006): tests, privacy, bootstrap, app build, package verification, model absence | Keep green for every merge |
-| Developer ID signature and Hardened Runtime | **Blocked** | No trusted Developer ID Application identity is installed | Owner must install/provide release identity |
-| Notarized and stapled DMG | **Blocked** | Scripts support `notarytool` and stapler; no credentials are configured | Developer ID identity plus notary profile |
+| Developer ID signature and Hardened Runtime | **Proven — 0.1.1 alpha candidate** | September 10, 2026 candidate signed with Developer ID Application; nested signatures validate | Re-run verifier on the exact artifact built from merged main |
+| Notarized and stapled app and DMG | **Proven — 0.1.1 alpha candidate** | Apple accepted app submission `bd9bf758-4e0c-491a-987a-05eb9b531c3e` and DMG submission `d8bea2e5-5560-45c6-9c71-eb360178c3fb`; both tickets staple and validate | Check the final release receipt and clean-machine installation separately |
 | Clean-machine installation | **Open** | Local DMG structure verifies | Test final notarized artifact on Mac without developer tools |
 | Model/conversion license review | **Blocked** | Governing NVIDIA license archived; discrepancy documented in [`model-provenance.md`](model-provenance.md) | Explicit human legal review before public distribution |
 
@@ -117,9 +117,9 @@ retained in a receipt.
 5. Run representative accuracy, live-display latency, power, thermal, and memory
    measurements on a physical M1/16 GB Mac.
 6. Obtain explicit human review of the model/conversion license chain.
-7. Install a Developer ID Application identity, notarize/staple the DMG, and
-   verify it on a clean Mac without developer tools.
+7. Recheck Developer ID signatures and app/DMG tickets on every release, and
+   verify the final installer on a clean Mac without developer tools.
 
-Said is a playable local alpha. This matrix must not be used to describe it as
+Said is a playable alpha. This matrix must not be used to describe it as
 a completed or publicly distributable V1 until every **Open** and **Blocked**
 release requirement above is resolved with evidence at the required scope.
