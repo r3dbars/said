@@ -5,6 +5,7 @@ public enum CaptionToolbarSection: Sendable, CaseIterable {
 /// Shared by the rendered bar and the panel's hover hit region.
 public struct CaptionToolbarLayout: Sendable {
     public static let height = 44.0
+    public static let cornerRadius = 18.0
     public static let gap = 8.0
     public static let compactWidth = 260.0
     public static let maximumWidth = compactWidth

@@ -28,9 +28,9 @@ struct CaptionToolbarView: View {
             .padding(.horizontal, 12)
             .frame(width: layout.width, height: CaptionToolbarLayout.height)
             .background(Color(red: 0.10, green: 0.10, blue: 0.115),
-                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        in: RoundedRectangle(cornerRadius: CaptionToolbarLayout.cornerRadius, style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                RoundedRectangle(cornerRadius: CaptionToolbarLayout.cornerRadius, style: .continuous)
                     .strokeBorder(.white.opacity(contrast == .increased ? 0.5 : 0.12))
             }
             .offset(x: layout.offsetX)

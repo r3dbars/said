@@ -137,7 +137,8 @@ text sizes, clamped to the active display. Height fits two rows of the selected
 font's actual metrics, with 12–16.5 pt vertical and 18–24 pt horizontal padding.
 Smaller type still fits more words because the box grows more slowly than the
 letters. Keep its horizontal center and the edge nearest the toolbar stable
-while resizing. Use a 28-point continuous corner radius and a dark neutral surface,
+while resizing. Use continuous corners proportional to the caption height,
+matching the toolbar's 18:44 radius-to-height ratio, and a dark neutral surface,
 near-white text, and a subtle highlight border without a broad shadow. Reduce
 Transparency and Increase Contrast use an opaque background.
 
@@ -187,8 +188,9 @@ Leaving the caption and controls hides the bar after a brief grace period and
 fade, restoring click-through behavior. Native font-menu tracking and active
 slider adjustments keep the controls available. Reduce Motion suppresses animation.
 
-Both surfaces use continuous rounded corners: 28 pt on the caption card and
-18 pt on the toolbar. Customize Captions remains available from the menu during
+Both surfaces use the same proportional continuous rounding: the toolbar's
+18 pt radius at 44 pt height scales with the caption card's height. Customize
+Captions remains available from the menu during
 silence and shows a sample; clicking outside or pressing Escape finishes
 placement without adding another permanent button. Text size changes apply
 immediately and persist across launches; the caption box scales gently around

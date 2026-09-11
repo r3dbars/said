@@ -43,7 +43,7 @@ struct CaptionView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background { captionSurface }
             .overlay {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                captionShape
                     .stroke(
                         .white.opacity(contrast == .increased ? 0.42 : 0.12),
                         lineWidth: 1
@@ -78,12 +78,20 @@ struct CaptionView: View {
 
     @ViewBuilder
     private var captionSurface: some View {
-        let shape = RoundedRectangle(cornerRadius: 28, style: .continuous)
+        let shape = captionShape
         if reduceTransparency || contrast == .increased {
             shape.fill(Color.black)
         } else {
             shape.fill(Color(red: 0.07, green: 0.075, blue: 0.085).opacity(model.captionBackgroundOpacity))
         }
+    }
+
+    private var captionShape: RoundedRectangle {
+        let height = CaptionFonts.panelHeight(style: model.captionFontStyle, size: model.captionTextSize)
+        return RoundedRectangle(
+            cornerRadius: height * CaptionToolbarLayout.cornerRadius / CaptionToolbarLayout.height,
+            style: .continuous
+        )
     }
 
     private var captionColor: Color { model.captionTextColor.color }
