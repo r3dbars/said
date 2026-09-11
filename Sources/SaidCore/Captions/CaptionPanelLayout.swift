@@ -1,10 +1,23 @@
 public enum CaptionPanelLayout {
     public static let defaultWidth = 440.0
-    public static let fixedCaptionWidth = 520.0
     public static let minimumWidth = 300.0
     public static let maximumWidth = 640.0
     public static let maximumScreenFraction = 0.90
     public static let editingToolbarExtraHeight = CaptionToolbarLayout.height + CaptionToolbarLayout.gap
+
+    /// Width grows more slowly than the type, so smaller captions still fit
+    /// more words without retaining the largest caption box.
+    public static func captionWidth(for size: CaptionTextSize) -> Double {
+        520 + (size.pointSize - 18) * 8
+    }
+
+    public static func horizontalPadding(for size: CaptionTextSize) -> Double {
+        18 + (size.pointSize - 10) / 3
+    }
+
+    public static func verticalPadding(for size: CaptionTextSize) -> Double {
+        12 + (size.pointSize - 10) / 4
+    }
 
     public static func clampedWidth(
         _ requestedWidth: Double,

@@ -106,9 +106,6 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         guard lock.withLock({ operationEpoch.owns(captureGeneration) }) else {
             throw CancellationError()
         }
-        let outputDevice = try AudioObjectID.saidDefaultSystemOutputDevice()
-        guard outputDevice.saidIsValid else { throw CoreAudioCaptureError.invalidOutputDevice }
-        let outputUID = try outputDevice.saidDeviceUID()
         let routeDevice = try AudioObjectID.saidDefaultOutputDevice()
         guard routeDevice.saidIsValid else { throw CoreAudioCaptureError.invalidOutputDevice }
 
@@ -146,11 +143,13 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         let aggregateDescription: [String: Any] = [
             kAudioAggregateDeviceNameKey: "Said System Audio",
             kAudioAggregateDeviceUIDKey: "app.said.capture.\(UUID().uuidString)",
-            kAudioAggregateDeviceMainSubDeviceKey: outputUID,
             kAudioAggregateDeviceIsPrivateKey: true,
             kAudioAggregateDeviceIsStackedKey: false,
             kAudioAggregateDeviceTapAutoStartKey: true,
-            kAudioAggregateDeviceSubDeviceListKey: [[kAudioSubDeviceUIDKey: outputUID]],
+            // The tap supplies the only input. Adding the playback device also
+            // adds its input streams (for example a display's microphone),
+            // so the aggregate's buffer list no longer matches the tap format.
+            kAudioAggregateDeviceSubDeviceListKey: [],
             kAudioAggregateDeviceTapListKey: [[
                 kAudioSubTapDriftCompensationKey: true,
                 kAudioSubTapUIDKey: tapDescription.uuid.uuidString,
@@ -171,13 +170,7 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
             ioQueue
         ) { [weak self] _, inputData, _, _, _ in
             guard let self,
-                  let borrowed = AVAudioPCMBuffer(
-                    pcmFormat: format,
-                    bufferListNoCopy: inputData,
-                    deallocator: nil
-                  ),
-                  borrowed.frameLength > 0,
-                  let owned = Self.copyBuffer(borrowed)
+                  let owned = CoreAudioTapBuffer.copy(inputData, format: format)
             else { return }
             self.accept(owned, generation: captureGeneration)
         }
@@ -201,30 +194,6 @@ public final class CoreAudioSystemAudioCapture: SystemAudioCapturing, @unchecked
         }
         guard accepted else { throw CancellationError() }
         installed = true
-    }
-
-    private static func copyBuffer(_ source: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
-        guard let destination = AVAudioPCMBuffer(
-            pcmFormat: source.format,
-            frameCapacity: source.frameLength
-        ) else { return nil }
-        destination.frameLength = source.frameLength
-
-        let sourceBuffers = UnsafeMutableAudioBufferListPointer(source.mutableAudioBufferList)
-        let destinationBuffers = UnsafeMutableAudioBufferListPointer(destination.mutableAudioBufferList)
-        guard sourceBuffers.count == destinationBuffers.count else { return nil }
-        for index in sourceBuffers.indices {
-            guard let sourceData = sourceBuffers[index].mData,
-                  let destinationData = destinationBuffers[index].mData
-            else { return nil }
-            let byteCount = min(
-                Int(sourceBuffers[index].mDataByteSize),
-                Int(destinationBuffers[index].mDataByteSize)
-            )
-            memcpy(destinationData, sourceData, byteCount)
-            destinationBuffers[index].mDataByteSize = UInt32(byteCount)
-        }
-        return destination
     }
 
     private func accept(_ buffer: AVAudioPCMBuffer, generation captureGeneration: UInt64) {

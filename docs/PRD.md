@@ -131,11 +131,13 @@ Default placement is horizontally centered roughly 64 points above the active
 display's visible bottom. Persist normalized display-relative placement, the
 chosen display when it remains connected, and the user's caption scale.
 
-The caption box stays 520 points wide (clamped to the active display) when
-text size changes. Its height reserves room for the largest text option: 110 pt
-for system faces and a font-metric allowance for OpenDyslexic. Changing size does
-not shrink or enlarge the box. Use 24-point horizontal and 17-point vertical
-padding and a 28-point continuous corner radius. Use a dark neutral surface,
+The caption box scales gently with text size rather than retaining a large fixed
+outline. Its preferred widths are 456, 488, 520, 552, and 600 points for the five
+text sizes, clamped to the active display. Height fits two rows of the selected
+font's actual metrics, with 12–16.5 pt vertical and 18–24 pt horizontal padding.
+Smaller type still fits more words because the box grows more slowly than the
+letters. Keep its horizontal center and the edge nearest the toolbar stable
+while resizing. Use a 28-point continuous corner radius and a dark neutral surface,
 near-white text, and a subtle highlight border without a broad shadow. Reduce
 Transparency and Increase Contrast use an opaque background.
 
@@ -188,8 +190,9 @@ slider adjustments keep the controls available. Reduce Motion suppresses animati
 Both surfaces use continuous rounded corners: 28 pt on the caption card and
 18 pt on the toolbar. Customize Captions remains available from the menu during
 silence and shows a sample; clicking outside or pressing Escape finishes
-placement without adding another permanent button. Text size changes apply immediately and persist across launches; caption position
-and box dimensions stay fixed.
+placement without adding another permanent button. Text size changes apply
+immediately and persist across launches; the caption box scales gently around
+the same horizontal center and toolbar edge.
 When the panel moves into
 the upper half of its display, place the toolbar below the caption card; place
 it above the card in the lower half. Settings contains caption

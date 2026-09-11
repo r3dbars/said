@@ -25,10 +25,11 @@ final class CaptionMeasuredLayoutTests: XCTestCase {
     func testEverySmallerFontChoiceRevealsAtLeastAsMuchRecentText() {
         let text = "Move these captions wherever you like. Pick the text size that feels comfortable. Smaller text fits more words in the same space."
         var previousCount = Int.max
-        for size in CaptionScale.allCases.map({ $0.textSize.pointSize }) {
-            let font = NSFont.systemFont(ofSize: size, weight: .semibold)
+        for size in CaptionScale.allCases.map({ $0.textSize }) {
+            let font = NSFont.systemFont(ofSize: size.pointSize, weight: .semibold)
             let measure: (String) -> Double = { ($0 as NSString).size(withAttributes: [.font: font]).width }
-            let width = CaptionPanelLayout.fixedCaptionWidth - 48
+            let width = CaptionPanelLayout.captionWidth(for: size)
+                - CaptionPanelLayout.horizontalPadding(for: size) * 2
             let origin = CaptionWindowing.filledRowOrigin(text: text, maximumLineWidth: width, measureText: measure)
             let window = CaptionWindowing.rolling(committed: text, tentative: "", maximumLineWidth: width,
                                                   startingAtWord: origin, measureText: measure)
@@ -37,6 +38,21 @@ final class CaptionMeasuredLayoutTests: XCTestCase {
             XCTAssertTrue(window.lines.allSatisfy { measure($0.text) <= width })
             XCTAssertTrue(window.text.hasSuffix("same space."))
             previousCount = wordCount
+        }
+    }
+
+    func testCaptionBoxGrowsMoreSlowlyThanTypeWhileToolbarStaysFixed() {
+        var previousWidth = 0.0
+        var previousCapacity = Double.greatestFiniteMagnitude
+        for size in CaptionScale.allCases.map(\.textSize) {
+            let width = CaptionPanelLayout.captionWidth(for: size)
+            let availableWidth = width - CaptionPanelLayout.horizontalPadding(for: size) * 2
+            XCTAssertGreaterThan(width, previousWidth)
+            XCTAssertLessThanOrEqual(width, 600)
+            XCTAssertLessThan(availableWidth / size.pointSize, previousCapacity)
+            XCTAssertEqual(CaptionToolbarLayout(captionWidth: width, section: .none).width, 260)
+            previousWidth = width
+            previousCapacity = availableWidth / size.pointSize
         }
     }
 

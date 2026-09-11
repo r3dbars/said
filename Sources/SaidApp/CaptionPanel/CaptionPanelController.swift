@@ -25,7 +25,8 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         self.model = model
         let initialSize = Self.panelSize(
             style: model.captionFontStyle,
-            width: CaptionPanelLayout.fixedCaptionWidth
+            size: model.captionTextSize,
+            width: CaptionPanelLayout.captionWidth(for: model.captionTextSize)
         )
         panel = CaptionInteractionPanel(
             contentRect: NSRect(origin: .zero, size: initialSize),
@@ -269,7 +270,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
             x: visibleFrame.midX - width / 2,
             y: visibleFrame.minY + 64,
             width: width,
-            height: CaptionFonts.panelHeight(style: model.captionFontStyle)
+            height: CaptionFonts.panelHeight(style: model.captionFontStyle, size: model.captionTextSize)
         )
         let placement = model.captionControlsMode.isVisible
             ? toolbarPlacement(for: captionFrame, on: screen)
@@ -284,11 +285,15 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
 
     private func resizePanel(for scale: CaptionScale, style: CaptionFontStyle) {
         guard let screen = panel.screen ?? activeScreen() else { return }
-        let width = resolvedWidth(on: screen)
+        let width = resolvedWidth(on: screen, size: scale.textSize)
         var captionFrame = currentCaptionFrame
         let centerX = captionFrame.midX
+        let top = captionFrame.maxY
         captionFrame.size.width = width
-        captionFrame.size.height = CaptionFonts.panelHeight(style: style)
+        captionFrame.size.height = CaptionFonts.panelHeight(style: style, size: scale.textSize)
+        if model.captionToolbarPlacement == .above {
+            captionFrame.origin.y = top - captionFrame.height
+        }
         captionFrame.origin.x = centerX - width / 2
         captionFrame.origin.x = min(
             max(captionFrame.origin.x, screen.visibleFrame.minX),
@@ -421,7 +426,7 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         guard let screen = savedScreen() ?? activeScreen() else { return }
         let width = resolvedWidth(on: screen)
         panel.setContentSize(Self.panelSize(
-            style: model.captionFontStyle, width: width
+            style: model.captionFontStyle, size: model.captionTextSize, width: width
         ))
 
         guard defaults.object(forKey: Keys.positionX) != nil,
@@ -449,9 +454,9 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
     }
 
     private static func panelSize(
-        style: CaptionFontStyle, width: Double
+        style: CaptionFontStyle, size: CaptionTextSize, width: Double
     ) -> NSSize {
-        NSSize(width: width, height: CaptionFonts.panelHeight(style: style))
+        NSSize(width: width, height: CaptionFonts.panelHeight(style: style, size: size))
     }
 
     private func saveLayout() {
@@ -472,9 +477,9 @@ final class CaptionPanelController: NSObject, NSWindowDelegate {
         }
     }
 
-    private func resolvedWidth(on screen: NSScreen) -> Double {
+    private func resolvedWidth(on screen: NSScreen, size: CaptionTextSize? = nil) -> Double {
         CaptionPanelLayout.clampedWidth(
-            CaptionPanelLayout.fixedCaptionWidth,
+            CaptionPanelLayout.captionWidth(for: size ?? model.captionTextSize),
             visibleScreenWidth: screen.visibleFrame.width
         )
     }

@@ -36,6 +36,7 @@ struct CaptionFontMenu: NSViewRepresentable {
         init(model: AppModel) { self.model = model }
 
         @objc func openMenu(_ sender: NSButton) {
+            guard let window = sender.window else { return }
             model.captionToolbarSection = .none
             model.captionFontMenuIsOpen = true
             let menu = NSMenu()
@@ -50,7 +51,13 @@ struct CaptionFontMenu: NSViewRepresentable {
                 ])
                 menu.addItem(item)
             }
-            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.minY), in: sender)
+            // A floating caption panel can be shorter than the menu. Anchor in
+            // screen space so AppKit can use the display, and keep the current
+            // choice visible when opening the list.
+            let anchor = window.convertPoint(toScreen: sender.convert(
+                NSPoint(x: sender.bounds.minX, y: sender.bounds.maxY), to: nil
+            ))
+            menu.popUp(positioning: menu.items.first { $0.state == .on }, at: anchor, in: nil)
             model.captionFontMenuIsOpen = false
         }
 

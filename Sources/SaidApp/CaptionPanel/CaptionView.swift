@@ -38,8 +38,8 @@ struct CaptionView: View {
 
     private var captionCard: some View {
         captionRows
-            .padding(.horizontal, 24)
-            .padding(.vertical, 17)
+            .padding(.horizontal, CaptionPanelLayout.horizontalPadding(for: model.captionTextSize))
+            .padding(.vertical, CaptionPanelLayout.verticalPadding(for: model.captionTextSize))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background { captionSurface }
             .overlay {

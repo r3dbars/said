@@ -7,12 +7,10 @@ import SaidCore
 enum CaptionFonts {
     static let dyslexicName = "OpenDyslexic-Regular"
 
-    static func panelHeight(style: CaptionFontStyle) -> Double {
-        // Reserve the largest text size once. Size changes only alter text density.
-        let size = CaptionTextSize.extraLarge
-        guard style == .dyslexic, let font = NSFont(name: dyslexicName, size: size.pointSize)
-        else { return size.panelHeight }
-        return max(size.panelHeight, ceil((font.ascender - font.descender + font.leading) * 2 + 4 + 34))
+    static func panelHeight(style: CaptionFontStyle, size: CaptionTextSize) -> Double {
+        let font = captionFont(for: style, size: size.pointSize)
+        let lineHeight = ceil(font.ascender - font.descender + font.leading)
+        return ceil(lineHeight * 2 + 4 + CaptionPanelLayout.verticalPadding(for: size) * 2)
     }
 
     static func captionFont(for style: CaptionFontStyle, size: CGFloat) -> NSFont {
@@ -36,7 +34,8 @@ enum CaptionFonts {
                        startingAtWord: Int) -> CaptionWindow {
         let font = captionFont(for: style, size: size.pointSize)
         return CaptionWindowing.rolling(
-            committed: committed, tentative: tentative, maximumLineWidth: max(1, width - 48),
+            committed: committed, tentative: tentative,
+            maximumLineWidth: max(1, width - CaptionPanelLayout.horizontalPadding(for: size) * 2),
             startingAtWord: startingAtWord
         ) { text in
             (text as NSString).size(withAttributes: [.font: font]).width
@@ -46,7 +45,9 @@ enum CaptionFonts {
     static func filledRowOrigin(text: String, width: Double,
                                 size: CaptionTextSize, style: CaptionFontStyle) -> Int {
         let font = captionFont(for: style, size: size.pointSize)
-        return CaptionWindowing.filledRowOrigin(text: text, maximumLineWidth: max(1, width - 48)) {
+        return CaptionWindowing.filledRowOrigin(
+            text: text, maximumLineWidth: max(1, width - CaptionPanelLayout.horizontalPadding(for: size) * 2)
+        ) {
             ($0 as NSString).size(withAttributes: [.font: font]).width
         }
     }
