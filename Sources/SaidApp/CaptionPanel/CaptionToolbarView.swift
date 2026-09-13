@@ -3,6 +3,7 @@ import SwiftUI
 
 struct CaptionToolbarView: View {
     @ObservedObject var model: AppModel
+    let surfaceOpacity: Double
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var fontIsHovered = false
@@ -20,7 +21,7 @@ struct CaptionToolbarView: View {
                     separator
                     CaptionFontMenu(model: model)
                         .frame(width: 110, height: 32)
-                        .background(.white.opacity(fontIsHovered ? 0.08 : 0),
+                        .background(.white.opacity(fontIsHovered ? 0.08 * surfaceOpacity : 0),
                                     in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                         .onHover { fontIsHovered = $0 }
                     separator
@@ -31,12 +32,7 @@ struct CaptionToolbarView: View {
             }
             .padding(.horizontal, 9)
             .frame(width: layout.width, height: CaptionToolbarLayout.height)
-            .background(Color(red: 0.10, green: 0.10, blue: 0.115),
-                        in: RoundedRectangle(cornerRadius: CaptionToolbarLayout.cornerRadius, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: CaptionToolbarLayout.cornerRadius, style: .continuous)
-                    .strokeBorder(.white.opacity(contrast == .increased ? 0.5 : 0.12))
-            }
+            .background { toolbarSurface }
             .offset(x: layout.offsetX)
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.18),
                        value: model.captionToolbarSection)
@@ -44,6 +40,15 @@ struct CaptionToolbarView: View {
             .accessibilityLabel("Caption appearance")
         }
         .frame(height: CaptionToolbarLayout.height)
+    }
+
+    private var toolbarSurface: some View {
+        let shape = RoundedRectangle(cornerRadius: CaptionToolbarLayout.cornerRadius, style: .continuous)
+        return shape
+            .fill(Color(red: 0.10, green: 0.10, blue: 0.115))
+            .overlay { shape.strokeBorder(.white.opacity(contrast == .increased ? 0.5 : 0.12)) }
+            .compositingGroup()
+            .opacity(surfaceOpacity)
     }
 
     @ViewBuilder private var focusedControls: some View {
@@ -58,7 +63,7 @@ struct CaptionToolbarView: View {
     }
 
     private var separator: some View {
-        Rectangle().fill(.white.opacity(0.08)).frame(width: 1, height: 15)
+        Rectangle().fill(.white.opacity(0.08 * surfaceOpacity)).frame(width: 1, height: 15)
             .padding(.horizontal, 1)
     }
 
@@ -67,7 +72,7 @@ struct CaptionToolbarView: View {
             Text("A").font(.system(size: 22, weight: .medium))
                 .frame(width: 32, height: 32)
         }
-        .buttonStyle(CaptionToolbarButtonStyle())
+        .buttonStyle(CaptionToolbarButtonStyle(surfaceOpacity: surfaceOpacity))
         .help("Caption size")
         .accessibilityLabel("Caption size")
         .accessibilityValue(model.captionScale.accessibilityTitle)
@@ -85,10 +90,10 @@ struct CaptionToolbarView: View {
                         .font(.system(size: Double(13 + index * 3), weight: .medium))
                         .frame(maxWidth: .infinity)
                         .frame(minWidth: 28, minHeight: 32)
-                        .background(.white.opacity(choice == model.captionScale ? 0.16 : 0),
+                        .background(.white.opacity(choice == model.captionScale ? 0.16 * surfaceOpacity : 0),
                                     in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 }
-                .buttonStyle(CaptionToolbarButtonStyle())
+                .buttonStyle(CaptionToolbarButtonStyle(surfaceOpacity: surfaceOpacity))
                 .help(choice.accessibilityTitle)
                 .accessibilityLabel("\(choice.accessibilityTitle) captions")
                 .accessibilityValue(choice == model.captionScale ? "Selected" : "")
@@ -101,7 +106,7 @@ struct CaptionToolbarView: View {
         Button { toggle(.color) } label: {
             swatch(model.captionTextColor, selected: false)
         }
-        .buttonStyle(CaptionToolbarButtonStyle())
+        .buttonStyle(CaptionToolbarButtonStyle(surfaceOpacity: surfaceOpacity))
         .help("Caption color")
         .accessibilityLabel("Caption color")
         .accessibilityValue(model.captionTextColor.title)
@@ -118,7 +123,7 @@ struct CaptionToolbarView: View {
                     swatch(choice, selected: choice == model.captionTextColor)
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(CaptionToolbarButtonStyle())
+                .buttonStyle(CaptionToolbarButtonStyle(surfaceOpacity: surfaceOpacity))
                 .help(choice.title)
                 .accessibilityLabel("\(choice.title) caption text")
                 .accessibilityValue(choice == model.captionTextColor ? "Selected" : "")
@@ -141,7 +146,7 @@ struct CaptionToolbarView: View {
                 .font(.system(size: 17, weight: .regular))
                 .frame(width: 32, height: 32)
         }
-        .buttonStyle(CaptionToolbarButtonStyle())
+        .buttonStyle(CaptionToolbarButtonStyle(surfaceOpacity: surfaceOpacity))
         .help("Background opacity")
         .accessibilityLabel("Background opacity")
         .accessibilityValue("\(Int((model.captionBackgroundOpacity * 100).rounded())) percent")
@@ -166,18 +171,21 @@ struct CaptionToolbarView: View {
 }
 
 private struct CaptionToolbarButtonStyle: ButtonStyle {
+    let surfaceOpacity: Double
+
     func makeBody(configuration: Configuration) -> some View {
-        HoverBody(configuration: configuration)
+        HoverBody(configuration: configuration, surfaceOpacity: surfaceOpacity)
     }
 
     private struct HoverBody: View {
         let configuration: ButtonStyle.Configuration
+        let surfaceOpacity: Double
         @State private var isHovered = false
 
         var body: some View {
             configuration.label
                 .foregroundStyle(.white.opacity(configuration.isPressed ? 0.65 : 0.92))
-                .background(.white.opacity(configuration.isPressed ? 0.12 : (isHovered ? 0.08 : 0)),
+                .background(.white.opacity((configuration.isPressed ? 0.12 : (isHovered ? 0.08 : 0)) * surfaceOpacity),
                             in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 .contentShape(Rectangle())
                 .onHover { isHovered = $0 }

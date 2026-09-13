@@ -32,7 +32,7 @@ struct CaptionView: View {
     }
 
     private var controlBar: some View {
-        CaptionToolbarView(model: model)
+        CaptionToolbarView(model: model, surfaceOpacity: surfaceOpacity)
             .opacity(model.captionToolbarOpacity)
     }
 
@@ -42,13 +42,6 @@ struct CaptionView: View {
             .padding(.vertical, CaptionPanelLayout.verticalPadding(for: model.captionTextSize))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background { captionSurface }
-            .overlay {
-                captionShape
-                    .stroke(
-                        .white.opacity(contrast == .increased ? 0.42 : 0.12),
-                        lineWidth: 1
-                    )
-            }
     }
 
     private var captionRows: some View {
@@ -76,14 +69,19 @@ struct CaptionView: View {
             : model.visibleCaptionText)
     }
 
-    @ViewBuilder
     private var captionSurface: some View {
-        let shape = captionShape
-        if reduceTransparency || contrast == .increased {
-            shape.fill(Color.black)
-        } else {
-            shape.fill(Color(red: 0.07, green: 0.075, blue: 0.085).opacity(model.captionBackgroundOpacity))
-        }
+        captionShape
+            .fill(reduceTransparency || contrast == .increased
+                  ? Color.black : Color(red: 0.07, green: 0.075, blue: 0.085))
+            .overlay {
+                captionShape.stroke(.white.opacity(contrast == .increased ? 0.42 : 0.12), lineWidth: 1)
+            }
+            .compositingGroup()
+            .opacity(surfaceOpacity)
+    }
+
+    private var surfaceOpacity: Double {
+        reduceTransparency || contrast == .increased ? 1 : model.captionBackgroundOpacity
     }
 
     private var captionShape: ProportionalCaptionShape { ProportionalCaptionShape() }
