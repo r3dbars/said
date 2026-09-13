@@ -158,9 +158,12 @@ half-filled opacity circle. There are no permanent category labels or point-size
 values. The font menu shows Rounded, Sans, Serif, Mono, Block, and bundled
 OpenDyslexic (shown as **Dyslexic**) in their actual typefaces. Choosing a color
 opens White, Warm Yellow, Cyan, Mint, and Lavender, then folds back to the chosen
-dot. The opacity slider changes only the caption background, from 0–100%; text
-retains its committed/tentative contrast. Accessibility contrast/transparency
-preferences use an opaque background. All appearance choices persist locally.
+dot. The opacity slider fades the caption and toolbar backgrounds, outlines,
+dividers, and control highlight backgrounds together from 0–100%. Caption text
+retains its committed/tentative contrast. Control labels, icons, color swatches,
+and the native menu and slider stay readable and usable at 0%, so the setting
+can always be adjusted again. Accessibility contrast/transparency preferences
+keep the surfaces opaque. All appearance choices persist locally.
 
 While the Said switch is enabled, keep the panel visible and preserve the latest
 caption between utterances. Before the first caption, show one quiet secondary
